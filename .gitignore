@@ -1,0 +1,13 @@
+bin/
+obj/
+build/
+Data/*.json
+*.user
+*.suo
+.vs/
+.vscode/
+.idea/
+*.log
+*.mp3
+*.jpg
+*.png
