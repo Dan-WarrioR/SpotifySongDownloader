@@ -15,7 +15,7 @@ namespace SpotifyDownloader.Scripts.Data
     public class DownloadDatabase
     {
         private readonly string _databasePath;
-        private readonly List<TrackRecord> _tracks;
+        private List<TrackRecord> _tracks;
         private readonly Lock _lock = new();
     
         public DownloadDatabase()
@@ -27,7 +27,6 @@ namespace SpotifyDownloader.Scripts.Data
         
             _databasePath = Path.Combine(GlobalConfig.DataFolderPath, GlobalConfig.DatabaseFilename);
             _tracks = LoadDatabase();
-            
         }
     
         private List<TrackRecord> LoadDatabase()
@@ -53,7 +52,6 @@ namespace SpotifyDownloader.Scripts.Data
             lock (_lock)
             {
                 var json = JsonSerializer.Serialize(_tracks, GlobalConfig.SerializerOptions);
-            
                 File.WriteAllText(_databasePath, json);
             }
         }
@@ -85,6 +83,16 @@ namespace SpotifyDownloader.Scripts.Data
                 });
                 
                 SaveDatabase();
+            }
+        }
+    
+        public void ClearAll()
+        {
+            lock (_lock)
+            {
+                _tracks.Clear();
+                SaveDatabase();
+                Console.WriteLine("✓ Download history cleared");
             }
         }
     

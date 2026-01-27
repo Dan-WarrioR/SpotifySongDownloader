@@ -36,20 +36,42 @@ namespace SpotifyDownloader.Scripts.Core
             33% { transform: translate(5%, -5%) rotate(5deg); }
             66% { transform: translate(-5%, 5%) rotate(-5deg); }
         }
-        .container { max-width: 900px; margin: 0 auto; padding: 60px 24px; position: relative; z-index: 1; }
-        header { text-align: center; margin-bottom: 60px; animation: fadeInDown 0.8s ease-out; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 60px 24px; position: relative; z-index: 1; }
+        header { text-align: center; margin-bottom: 40px; animation: fadeInDown 0.8s ease-out; }
         h1 {
-            font-family: 'Syne', sans-serif; font-size: 4rem; font-weight: 800;
+            font-family: 'Syne', sans-serif; font-size: 3.5rem; font-weight: 800;
             background: linear-gradient(135deg, var(--accent) 0%, #00d4ff 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             background-clip: text; margin-bottom: 12px; letter-spacing: -2px;
         }
-        .subtitle { font-size: 1.2rem; color: var(--text-secondary); font-weight: 300; }
+        .subtitle { font-size: 1.1rem; color: var(--text-secondary); font-weight: 300; }
+        
+        /* Tabs */
+        .tabs {
+            display: flex; gap: 8px; margin-bottom: 24px;
+            background: var(--bg-secondary); padding: 8px; border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+        .tab {
+            flex: 1; padding: 16px 24px; background: transparent; border: none;
+            color: var(--text-secondary); font-family: 'Outfit', sans-serif;
+            font-size: 1rem; font-weight: 600; cursor: pointer;
+            border-radius: 12px; transition: all 0.3s ease;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .tab:hover { background: rgba(0, 255, 148, 0.05); color: var(--text-primary); }
+        .tab.active {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
+            color: var(--bg-primary); box-shadow: 0 4px 16px rgba(0, 255, 148, 0.3);
+        }
+        
+        .tab-content { display: none; animation: fadeIn 0.5s ease-out; }
+        .tab-content.active { display: block; }
+        
         .card {
             background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px;
             padding: 36px; margin-bottom: 24px; backdrop-filter: blur(20px);
             position: relative; overflow: hidden; transition: all 0.3s ease;
-            animation: fadeInUp 0.8s ease-out backwards;
         }
         .card::before {
             content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
@@ -57,15 +79,57 @@ namespace SpotifyDownloader.Scripts.Core
             opacity: 0; transition: opacity 0.3s;
         }
         .card:hover::before { opacity: 1; }
-        .card:nth-child(1) { animation-delay: 0.1s; }
-        .card:nth-child(2) { animation-delay: 0.2s; }
-        .card:nth-child(3) { animation-delay: 0.3s; }
-        .card:nth-child(4) { animation-delay: 0.4s; }
+        
         .card-title {
             font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 600;
             margin-bottom: 24px; display: flex; align-items: center; gap: 12px;
         }
         .card-title::before { content: ''; width: 4px; height: 24px; background: var(--accent); border-radius: 2px; }
+        
+        /* Info Grid */
+        .info-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px; margin-bottom: 24px;
+        }
+        .info-box {
+            background: var(--bg-secondary); padding: 20px; border-radius: 16px;
+            border: 1px solid var(--border); text-align: center;
+        }
+        .info-label {
+            font-size: 0.8rem; color: var(--text-secondary);
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
+        }
+        .info-value {
+            font-size: 1.8rem; font-weight: 700;
+            background: linear-gradient(135deg, var(--accent) 0%, #00d4ff 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .info-value.text {
+            font-size: 1rem; font-weight: 600; color: var(--text-primary);
+            word-break: break-word; background: none;
+            -webkit-background-clip: unset; -webkit-text-fill-color: unset;
+        }
+        .info-value.empty {
+            color: var(--text-secondary); opacity: 0.5;
+            background: none; -webkit-background-clip: unset; -webkit-text-fill-color: unset;
+        }
+        
+        /* Tools Check */
+        .tools-check {
+            display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+            margin-bottom: 24px; padding: 16px; background: var(--bg-secondary);
+            border-radius: 12px; border: 1px solid var(--border);
+        }
+        .tool-status {
+            display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+            background: var(--bg-card); border-radius: 8px; font-size: 0.9rem;
+        }
+        .tool-status.installed { color: var(--success); }
+        .tool-status.missing { color: var(--danger); }
+        .tool-status::before { content: '●'; font-size: 1.2rem; }
+        
+        /* Form Elements */
         .form-group { margin-bottom: 24px; }
         label {
             display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem;
@@ -79,43 +143,16 @@ namespace SpotifyDownloader.Scripts.Core
         }
         input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(0, 255, 148, 0.1); }
         input::placeholder { color: var(--text-secondary); opacity: 0.5; }
-        .current-value {
-            margin-top: 8px; padding: 10px 14px; background: var(--bg-secondary);
-            border-radius: 8px; font-size: 0.9rem; color: var(--text-primary);
-            border-left: 3px solid var(--border); display: none;
+        
+        .input-group {
+            display: flex; gap: 8px; align-items: stretch;
         }
-        .current-value.show { display: block; }
-        .current-value.filled { 
-            border-left-color: var(--success);
-            background: rgba(0, 255, 148, 0.05);
+        .input-group input { flex: 1; }
+        .input-group button {
+            padding: 12px 20px; white-space: nowrap;
         }
-        .current-value.empty { 
-            border-left-color: var(--warning);
-            background: rgba(255, 217, 61, 0.05);
-        }
-        .current-value::before { 
-            font-weight: 600; 
-            margin-right: 8px;
-        }
-        .current-value.filled::before { 
-            content: '✓ Saved: '; 
-            color: var(--success); 
-        }
-        .current-value.empty::before { 
-            content: '⚠ Not set'; 
-            color: var(--warning);
-            margin-right: 0;
-        }
-        .field-status {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-left: 8px;
-            vertical-align: middle;
-        }
-        .field-status.filled { background: var(--success); }
-        .field-status.empty { background: var(--warning); }
+        
+        /* Buttons */
         button {
             padding: 16px 32px; border: none; border-radius: 12px;
             font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 600;
@@ -128,18 +165,32 @@ namespace SpotifyDownloader.Scripts.Core
             transform: translate(-50%, -50%); transition: width 0.6s, height 0.6s;
         }
         button:active::before { width: 300px; height: 300px; }
+        button:disabled {
+            opacity: 0.5; cursor: not-allowed;
+        }
+        
         .btn-primary {
             background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
             color: var(--bg-primary); box-shadow: 0 8px 24px rgba(0, 255, 148, 0.3);
         }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0, 255, 148, 0.4); }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0, 255, 148, 0.4); }
         .btn-primary:active { transform: translateY(0); }
-        .btn-secondary { background: var(--bg-secondary); color: var(--text-primary); border: 2px solid var(--border); }
+        
+        .btn-secondary { 
+            background: var(--bg-secondary); color: var(--text-primary); 
+            border: 2px solid var(--border); box-shadow: none;
+        }
         .btn-secondary:hover { border-color: var(--accent); box-shadow: 0 4px 16px rgba(0, 255, 148, 0.2); }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger) 0%, #cc3d57 100%);
+            color: white; box-shadow: 0 8px 24px rgba(255, 77, 109, 0.3);
+        }
+        .btn-danger:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255, 77, 109, 0.4); }
+        
         .btn-download {
             width: 100%; padding: 24px; font-size: 1.2rem;
             background: linear-gradient(135deg, #00ff94 0%, #00d4ff 100%);
-            position: relative; overflow: hidden;
         }
         .btn-download::after {
             content: ''; position: absolute; top: 50%; left: 0; width: 0; height: 100%;
@@ -148,6 +199,8 @@ namespace SpotifyDownloader.Scripts.Core
         }
         .btn-download:hover::after { width: 200%; }
         .btn-download span { position: relative; z-index: 1; }
+        
+        /* Progress */
         .progress-section { display: none; margin-top: 24px; }
         .progress-section.active { display: block; }
         .progress-bar-container {
@@ -185,50 +238,14 @@ namespace SpotifyDownloader.Scripts.Core
             background-clip: text;
         }
         .stat-label { font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* Status Messages */
         .status { padding: 12px 20px; border-radius: 8px; margin-bottom: 16px; font-weight: 600; }
         .status.success { background: rgba(0, 255, 148, 0.1); color: var(--success); border: 1px solid var(--success); }
         .status.error { background: rgba(255, 77, 109, 0.1); color: var(--danger); border: 1px solid var(--danger); }
         .status.warning { background: rgba(255, 217, 61, 0.1); color: var(--warning); border: 1px solid var(--warning); }
-        .tools-check {
-            display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
-            margin-bottom: 24px; padding: 16px; background: var(--bg-secondary);
-            border-radius: 12px; border: 1px solid var(--border);
-        }
-        .tool-status {
-            display: flex; align-items: center; gap: 8px; padding: 8px 16px;
-            background: var(--bg-card); border-radius: 8px; font-size: 0.9rem;
-        }
-        .tool-status.installed { color: var(--success); }
-        .tool-status.missing { color: var(--danger); }
-        .tool-status::before { content: '●'; font-size: 1.2rem; }
-        .config-status-summary {
-            margin-bottom: 24px; padding: 16px; background: var(--bg-secondary);
-            border-radius: 12px; border: 2px solid var(--border);
-            display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-        }
-        .config-status-summary.complete {
-            border-color: var(--success);
-            background: rgba(0, 255, 148, 0.05);
-        }
-        .config-status-summary.incomplete {
-            border-color: var(--warning);
-            background: rgba(255, 217, 61, 0.05);
-        }
-        .config-status-icon {
-            font-size: 2rem;
-        }
-        .config-status-text {
-            flex: 1;
-        }
-        .config-status-title {
-            font-weight: 700;
-            font-size: 1rem;
-            margin-bottom: 4px;
-        }
-        .config-status-detail {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
+        
+        /* Results List */
         .results-list {
             max-height: 300px; overflow-y: auto; margin-top: 16px;
             background: var(--bg-secondary); border-radius: 12px; padding: 16px;
@@ -242,196 +259,252 @@ namespace SpotifyDownloader.Scripts.Core
         .result-track { font-weight: 600; margin-bottom: 4px; }
         .result-artist { font-size: 0.9rem; color: var(--text-secondary); }
         .result-error { font-size: 0.85rem; color: var(--danger); margin-top: 4px; }
+        
+        /* Danger Zone */
+        .danger-zone {
+            margin-top: 32px; padding: 24px; background: rgba(255, 77, 109, 0.05);
+            border: 2px solid rgba(255, 77, 109, 0.2); border-radius: 16px;
+        }
+        .danger-zone h3 {
+            color: var(--danger); margin-bottom: 12px; font-size: 1.2rem;
+        }
+        .danger-zone p {
+            color: var(--text-secondary); margin-bottom: 16px; line-height: 1.6;
+        }
+        
+        /* Animations */
         @keyframes fadeInDown {
             from { opacity: 0; transform: translateY(-30px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
+        
         @media (max-width: 768px) {
             h1 { font-size: 2.5rem; }
+            .info-grid { grid-template-columns: 1fr; }
             .stats { grid-template-columns: repeat(3, 1fr); }
             .card { padding: 24px; }
+            .tabs { flex-direction: column; }
+            .tab { padding: 12px; }
         }
     </style>
 </head>
 <body>
     <div class=""container"">
         <header>
-            <h1>🎵 Spotify</h1>
-            <p class=""subtitle"">Download your favorite playlists</p>
+            <h1>🎵 Spotify Downloader</h1>
+            <p class=""subtitle"">Download your favorite playlists with album art</p>
         </header>
 
-        <div class=""card"">
-            <h2 class=""card-title"">Configuration</h2>
-            
-            <div class=""config-status-summary incomplete"" id=""configStatusSummary"">
-                <div class=""config-status-icon"">⚙️</div>
-                <div class=""config-status-text"">
-                    <div class=""config-status-title"" id=""configStatusTitle"">Configuration Incomplete</div>
-                    <div class=""config-status-detail"" id=""configStatusDetail"">Please fill in all required fields</div>
-                </div>
-            </div>
-            
-            <div class=""tools-check"" id=""toolsCheck"">
-                <div class=""tool-status"" id=""ytdlpStatus"">
-                    <span>yt-dlp</span>
-                </div>
-                <div class=""tool-status"" id=""ffmpegStatus"">
-                    <span>ffmpeg</span>
-                </div>
-            </div>
-            <form id=""configForm"">
-                <div class=""form-group"">
-                    <label for=""clientId"">Spotify Client ID<span class=""field-status empty"" id=""statusClientId""></span></label>
-                    <input type=""text"" id=""clientId"" placeholder=""Enter your Spotify Client ID"">
-                    <div class=""current-value empty show"" id=""currentClientId""></div>
-                </div>
-                <div class=""form-group"">
-                    <label for=""clientSecret"">Spotify Client Secret<span class=""field-status empty"" id=""statusClientSecret""></span></label>
-                    <input type=""password"" id=""clientSecret"" placeholder=""Enter your Spotify Client Secret"">
-                    <div class=""current-value empty show"" id=""currentClientSecret""></div>
-                </div>
-                <div class=""form-group"">
-                    <label for=""playlistId"">Playlist ID<span class=""field-status empty"" id=""statusPlaylistId""></span></label>
-                    <input type=""text"" id=""playlistId"" placeholder=""Enter Spotify Playlist ID"">
-                    <div class=""current-value empty show"" id=""currentPlaylistId""></div>
-                </div>
-                <div class=""form-group"">
-                    <label for=""downloadFolder"">Download Folder<span class=""field-status empty"" id=""statusDownloadFolder""></span></label>
-                    <input type=""text"" id=""downloadFolder"" placeholder=""e.g., C:\Music\Spotify or /home/user/Music"">
-                    <div class=""current-value empty show"" id=""currentDownloadFolder""></div>
-                    <div style=""margin-top: 8px; font-size: 0.85rem; color: var(--text-secondary); font-style: italic;"">
-                        💡 Copy the full path from your file manager
-                    </div>
-                </div>
-                <button type=""submit"" class=""btn-primary"">Save Configuration</button>
-            </form>
+        <div class=""tabs"">
+            <button class=""tab active"" onclick=""switchTab('dashboard')"">📊 Dashboard</button>
+            <button class=""tab"" onclick=""switchTab('config')"">⚙️ Configuration</button>
         </div>
 
-        <div class=""card"">
-            <h2 class=""card-title"">Download</h2>
-            
-            <div id=""currentConfigDisplay"" style=""margin-bottom: 20px; padding: 16px; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border); display: none;"">
-                <div style=""font-weight: 600; margin-bottom: 12px; color: var(--accent);"">Current Configuration:</div>
-                <div style=""font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8;"">
-                    <div><strong>Playlist:</strong> <span id=""displayPlaylistId"">-</span></div>
-                    <div><strong>Download to:</strong> <span id=""displayDownloadFolder"">-</span></div>
+        <!-- DASHBOARD TAB -->
+        <div id=""dashboard-tab"" class=""tab-content active"">
+            <div class=""card"">
+                <h2 class=""card-title"">Current Setup</h2>
+                
+                <div class=""info-grid"">
+                    <div class=""info-box"">
+                        <div class=""info-label"">Playlist ID</div>
+                        <div class=""info-value text empty"" id=""infoPlaylistId"">Not configured</div>
+                    </div>
+                    <div class=""info-box"">
+                        <div class=""info-label"">Download Folder</div>
+                        <div class=""info-value text empty"" id=""infoDownloadFolder"">Not configured</div>
+                    </div>
+                    <div class=""info-box"">
+                        <div class=""info-label"">Total Downloaded</div>
+                        <div class=""info-value"" id=""infoTotalDownloaded"">0</div>
+                    </div>
+                </div>
+                
+                <div class=""tools-check"" id=""toolsCheck"">
+                    <div style=""flex: 1; font-weight: 600; color: var(--text-secondary);"">Required Tools:</div>
+                    <div class=""tool-status"" id=""ytdlpStatus"">
+                        <span>yt-dlp</span>
+                    </div>
+                    <div class=""tool-status"" id=""ffmpegStatus"">
+                        <span>ffmpeg</span>
+                    </div>
                 </div>
             </div>
-            
-            <div id=""statusMessage""></div>
-            <button id=""downloadBtn"" class=""btn-download""><span>Start Download</span></button>
-            
-            <div id=""progressSection"" class=""progress-section"">
-                <div class=""current-track"" id=""currentTrack""></div>
-                <div class=""progress-text"" id=""progressText"">0%</div>
-                <div class=""progress-bar-container"">
-                    <div class=""progress-bar"" id=""progressBar""></div>
+
+            <div class=""card"">
+                <h2 class=""card-title"">Download Playlist</h2>
+                
+                <div id=""statusMessage""></div>
+                <button id=""downloadBtn"" class=""btn-download"" disabled><span>⬇️ Start Download</span></button>
+                
+                <div id=""progressSection"" class=""progress-section"">
+                    <div class=""current-track"" id=""currentTrack""></div>
+                    <div class=""progress-text"" id=""progressText"">0%</div>
+                    <div class=""progress-bar-container"">
+                        <div class=""progress-bar"" id=""progressBar""></div>
+                    </div>
+                    <div class=""stats"">
+                        <div class=""stat"">
+                            <div class=""stat-value"" id=""completedCount"">0</div>
+                            <div class=""stat-label"">Completed</div>
+                        </div>
+                        <div class=""stat"">
+                            <div class=""stat-value"" id=""failedCount"">0</div>
+                            <div class=""stat-label"">Failed</div>
+                        </div>
+                        <div class=""stat"">
+                            <div class=""stat-value"" id=""totalCount"">0</div>
+                            <div class=""stat-label"">Total</div>
+                        </div>
+                    </div>
+                    <div id=""resultsList"" class=""results-list""></div>
                 </div>
-                <div class=""stats"">
-                    <div class=""stat"">
-                        <div class=""stat-value"" id=""completedCount"">0</div>
-                        <div class=""stat-label"">Completed</div>
+                
+                <div class=""danger-zone"">
+                    <h3>⚠️ Re-download All Tracks</h3>
+                    <p>
+                        This will clear your download history and re-download all tracks from the playlist. 
+                        Use this if you have corrupted files or missing album art.
+                    </p>
+                    <button id=""clearHistoryBtn"" class=""btn-danger"">🔄 Clear History & Re-download All</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONFIGURATION TAB -->
+        <div id=""config-tab"" class=""tab-content"">
+            <div class=""card"">
+                <h2 class=""card-title"">Spotify API Configuration</h2>
+                
+                <form id=""configForm"">
+                    <div class=""form-group"">
+                        <label for=""clientId"">Spotify Client ID</label>
+                        <input type=""text"" id=""clientId"" placeholder=""Enter your Spotify Client ID"" required>
+                        <div style=""margin-top: 8px; font-size: 0.85rem; color: var(--text-secondary);"">
+                            Get this from <a href=""https://developer.spotify.com/dashboard"" target=""_blank"" style=""color: var(--accent);"">Spotify Developer Dashboard</a>
+                        </div>
                     </div>
-                    <div class=""stat"">
-                        <div class=""stat-value"" id=""failedCount"">0</div>
-                        <div class=""stat-label"">Failed</div>
+                    
+                    <div class=""form-group"">
+                        <label for=""clientSecret"">Spotify Client Secret</label>
+                        <input type=""text"" id=""clientSecret"" placeholder=""Enter your Spotify Client Secret"" required>
                     </div>
-                    <div class=""stat"">
-                        <div class=""stat-value"" id=""totalCount"">0</div>
-                        <div class=""stat-label"">Total</div>
+                    
+                    <div class=""form-group"">
+                        <label for=""playlistId"">Playlist ID</label>
+                        <input type=""text"" id=""playlistId"" placeholder=""e.g., 37i9dQZF1DXcBWIGoYBM5M"" required>
+                        <div style=""margin-top: 8px; font-size: 0.85rem; color: var(--text-secondary);"">
+                            💡 Copy from playlist URL: spotify.com/playlist/<strong>PLAYLIST_ID</strong>
+                        </div>
+                    </div>
+                    
+                    <div class=""form-group"">
+                        <label for=""downloadFolder"">Download Folder</label>
+                        <div class=""input-group"">
+                            <input type=""text"" id=""downloadFolder"" placeholder=""Path to download folder"" required>
+                            <button type=""button"" class=""btn-secondary"" onclick=""setDefaultMusicFolder()"">🎵 Music</button>
+                            <button type=""button"" class=""btn-secondary"" onclick=""setDefaultDownloadsFolder()"">📥 Downloads</button>
+                        </div>
+                        <div style=""margin-top: 8px; font-size: 0.85rem; color: var(--text-secondary); font-style: italic;"">
+                            Quick buttons will set common default paths for your OS
+                        </div>
+                    </div>
+                    
+                    <button type=""submit"" class=""btn-primary"" style=""width: 100%;"">💾 Save Configuration</button>
+                </form>
+            </div>
+            
+            <div class=""card"">
+                <h2 class=""card-title"">Current Configuration</h2>
+                
+                <div class=""info-grid"">
+                    <div class=""info-box"">
+                        <div class=""info-label"">Client ID</div>
+                        <div class=""info-value text empty"" id=""displayClientId"">Not set</div>
+                    </div>
+                    <div class=""info-box"">
+                        <div class=""info-label"">Client Secret</div>
+                        <div class=""info-value text empty"" id=""displayClientSecret"">Not set</div>
+                    </div>
+                    <div class=""info-box"">
+                        <div class=""info-label"">Playlist ID</div>
+                        <div class=""info-value text empty"" id=""displayPlaylistId"">Not set</div>
+                    </div>
+                    <div class=""info-box"">
+                        <div class=""info-label"">Download Folder</div>
+                        <div class=""info-value text empty"" id=""displayDownloadFolder"">Not set</div>
                     </div>
                 </div>
-                <div id=""resultsList"" class=""results-list""></div>
             </div>
         </div>
     </div>
 
     <script>
+        let currentConfig = {};
+        
+        // Tab Switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+        
+        // Load Configuration
         async function loadConfig() {
             const response = await fetch('/api/config');
-            const config = await response.json();
+            currentConfig = await response.json();
             
-            document.getElementById('clientId').value = config.client_id || '';
-            document.getElementById('clientSecret').value = config.client_secret || '';
-            document.getElementById('playlistId').value = config.playlist_id || '';
-            document.getElementById('downloadFolder').value = config.download_folder || '';
+            // Update form inputs
+            document.getElementById('clientId').value = currentConfig.client_id || '';
+            document.getElementById('clientSecret').value = currentConfig.client_secret || '';
+            document.getElementById('playlistId').value = currentConfig.playlist_id || '';
+            document.getElementById('downloadFolder').value = currentConfig.download_folder || '';
             
-            updateFieldStatus('clientId', config.client_id);
-            updateFieldStatus('clientSecret', config.client_secret, true);
-            updateFieldStatus('playlistId', config.playlist_id);
-            updateFieldStatus('downloadFolder', config.download_folder);
+            // Update display values in config tab
+            updateDisplayValue('displayClientId', currentConfig.client_id);
+            updateDisplayValue('displayClientSecret', currentConfig.client_secret);
+            updateDisplayValue('displayPlaylistId', currentConfig.playlist_id);
+            updateDisplayValue('displayDownloadFolder', currentConfig.download_folder);
             
-            const configDisplay = document.getElementById('currentConfigDisplay');
-            if (config.playlist_id && config.download_folder) {
-                document.getElementById('displayPlaylistId').textContent = config.playlist_id;
-                document.getElementById('displayDownloadFolder').textContent = config.download_folder;
-                configDisplay.style.display = 'block';
-            } else {
-                configDisplay.style.display = 'none';
-            }
+            // Update dashboard info
+            updateDisplayValue('infoPlaylistId', currentConfig.playlist_id);
+            updateDisplayValue('infoDownloadFolder', currentConfig.download_folder);
+            
+            // Enable download button if config is complete
+            updateDownloadButton();
         }
-
-        function updateFieldStatus(fieldName, value, isSecret = false) {
-            const currentEl = document.getElementById('current' + fieldName.charAt(0).toUpperCase() + fieldName.slice(1));
-            const statusEl = document.getElementById('status' + fieldName.charAt(0).toUpperCase() + fieldName.slice(1));
-            
+        
+        function updateDisplayValue(elementId, value) {
+            const el = document.getElementById(elementId);
             if (value && value.trim() !== '') {
-                currentEl.classList.remove('empty');
-                currentEl.classList.add('filled');
-                statusEl.classList.remove('empty');
-                statusEl.classList.add('filled');
-                
-                if (isSecret) {
-                    currentEl.textContent = '•'.repeat(Math.min(value.length, 20));
-                } else {
-                    currentEl.textContent = value;
-                }
+                el.textContent = value;
+                el.classList.remove('empty');
             } else {
-                currentEl.classList.remove('filled');
-                currentEl.classList.add('empty');
-                statusEl.classList.remove('filled');
-                statusEl.classList.add('empty');
-                currentEl.textContent = '';
-            }
-            
-            updateOverallStatus();
-        }
-
-        function updateOverallStatus() {
-            const clientId = document.getElementById('clientId').value.trim();
-            const clientSecret = document.getElementById('clientSecret').value.trim();
-            const playlistId = document.getElementById('playlistId').value.trim();
-            const downloadFolder = document.getElementById('downloadFolder').value.trim();
-            
-            const allFilled = clientId && clientSecret && playlistId && downloadFolder;
-            const summary = document.getElementById('configStatusSummary');
-            const title = document.getElementById('configStatusTitle');
-            const detail = document.getElementById('configStatusDetail');
-            
-            if (allFilled) {
-                summary.classList.remove('incomplete');
-                summary.classList.add('complete');
-                title.textContent = '✓ Configuration Complete';
-                detail.textContent = 'All fields are configured. Ready to download!';
-            } else {
-                summary.classList.remove('complete');
-                summary.classList.add('incomplete');
-                title.textContent = '⚠ Configuration Incomplete';
-                
-                const missing = [];
-                if (!clientId) missing.push('Client ID');
-                if (!clientSecret) missing.push('Client Secret');
-                if (!playlistId) missing.push('Playlist ID');
-                if (!downloadFolder) missing.push('Download Folder');
-                
-                detail.textContent = 'Missing: ' + missing.join(', ');
+                el.textContent = elementId.includes('info') ? 'Not configured' : 'Not set';
+                el.classList.add('empty');
             }
         }
-
+        
+        function updateDownloadButton() {
+            const btn = document.getElementById('downloadBtn');
+            const isConfigured = currentConfig.client_id && currentConfig.client_secret && 
+                                 currentConfig.playlist_id && currentConfig.download_folder;
+            btn.disabled = !isConfigured;
+            
+            if (!isConfigured) {
+                btn.innerHTML = '<span>⚙️ Configure Settings First</span>';
+            } else {
+                btn.innerHTML = '<span>⬇️ Start Download</span>';
+            }
+        }
+        
+        // Check Tools
         async function checkTools() {
             const [ytdlp, ffmpeg] = await Promise.all([
                 fetch('/api/check-ytdlp').then(r => r.json()),
@@ -444,7 +517,36 @@ namespace SpotifyDownloader.Scripts.Core
             const ffmpegEl = document.getElementById('ffmpegStatus');
             ffmpegEl.className = 'tool-status ' + (ffmpeg.installed ? 'installed' : 'missing');
         }
-
+        
+        // Load Stats
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const stats = await response.json();
+                document.getElementById('infoTotalDownloaded').textContent = stats.total_downloaded || 0;
+            } catch (e) {
+                console.error('Failed to load stats:', e);
+            }
+        }
+        
+        // Default Folder Helpers
+        function setDefaultMusicFolder() {
+            const isWindows = navigator.platform.toLowerCase().includes('win');
+            const path = isWindows 
+                ? 'C:\\\\Users\\\\' + (localStorage.getItem('username') || 'YourUsername') + '\\\\Music\\\\SpotifyDownloads'
+                : '/home/' + (localStorage.getItem('username') || 'user') + '/Music/SpotifyDownloads';
+            document.getElementById('downloadFolder').value = path;
+        }
+        
+        function setDefaultDownloadsFolder() {
+            const isWindows = navigator.platform.toLowerCase().includes('win');
+            const path = isWindows 
+                ? 'C:\\\\Users\\\\' + (localStorage.getItem('username') || 'YourUsername') + '\\\\Downloads\\\\SpotifyDownloads'
+                : '/home/' + (localStorage.getItem('username') || 'user') + '/Downloads/SpotifyDownloads';
+            document.getElementById('downloadFolder').value = path;
+        }
+        
+        // Save Configuration
         document.getElementById('configForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const config = {
@@ -460,34 +562,61 @@ namespace SpotifyDownloader.Scripts.Core
                 body: JSON.stringify(config)
             });
             
-            showStatus('Configuration saved!', 'success');
-            loadConfig();
+            showStatus('✓ Configuration saved successfully!', 'success');
+            await loadConfig();
+            await loadStats();
         });
-
+        
+        // Start Download
         document.getElementById('downloadBtn').addEventListener('click', async () => {
+            if (document.getElementById('downloadBtn').disabled) return;
+            
             const response = await fetch('/api/download', { method: 'POST' });
             const data = await response.json();
             
             if (response.ok) {
                 if (data.new === 0) {
-                    showStatus(data.message, 'warning');
+                    showStatus('ℹ️ ' + data.message, 'warning');
                 } else {
-                    showStatus(data.message, 'success');
+                    showStatus('✓ ' + data.message, 'success');
                     document.getElementById('progressSection').classList.add('active');
                     startProgressPolling();
                 }
             } else {
-                showStatus(data.error, 'error');
+                showStatus('✗ ' + data.error, 'error');
             }
         });
-
+        
+        // Clear History & Re-download
+        document.getElementById('clearHistoryBtn').addEventListener('click', async () => {
+            if (!confirm('⚠️ This will clear all download history and re-download ALL tracks from the playlist.\\n\\nAre you sure you want to continue?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/clear-history', { method: 'POST' });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showStatus('✓ Download history cleared! You can now re-download all tracks.', 'success');
+                    await loadStats();
+                } else {
+                    showStatus('✗ Failed to clear history: ' + data.error, 'error');
+                }
+            } catch (e) {
+                showStatus('✗ Error: ' + e.message, 'error');
+            }
+        });
+        
+        // Status Messages
         function showStatus(message, type) {
             const statusEl = document.getElementById('statusMessage');
             statusEl.className = 'status ' + type;
             statusEl.textContent = message;
             setTimeout(() => statusEl.textContent = '', 5000);
         }
-
+        
+        // Progress Polling
         let pollingInterval;
         function startProgressPolling() {
             pollingInterval = setInterval(async () => {
@@ -498,10 +627,11 @@ namespace SpotifyDownloader.Scripts.Core
                 
                 if (!state.in_progress && state.total > 0) {
                     clearInterval(pollingInterval);
+                    await loadStats();
                 }
             }, 500);
         }
-
+        
         function updateProgress(state) {
             document.getElementById('currentTrack').textContent = state.current_track || '';
             document.getElementById('progressText').textContent = state.progress + '%';
@@ -519,9 +649,11 @@ namespace SpotifyDownloader.Scripts.Core
                 </div>
             `).reverse().join('');
         }
-
+        
+        // Initialize
         loadConfig();
         checkTools();
+        loadStats();
     </script>
 </body>
 </html>";

@@ -31,7 +31,13 @@ namespace SpotifyDownloader.Scripts.Controllers
             try
             {
                 var config = _configManager.Config;
-                return Ok(config);
+                return Ok(new
+                {
+                    client_id = config.ClientId,
+                    client_secret = config.ClientSecret,
+                    playlist_id = config.PlaylistId,
+                    download_folder = config.DownloadFolder
+                });
             }
             catch (Exception ex)
             {
@@ -42,14 +48,21 @@ namespace SpotifyDownloader.Scripts.Controllers
         [HttpPost("config")]
         public IActionResult SaveConfig([FromBody] ConfigData config)
         {
-            _configManager.Save(
-                config.ClientId,
-                config.ClientSecret,
-                config.PlaylistId,
-                config.DownloadFolder
-            );
-        
-            return Ok(new { success = true });
+            try
+            {
+                _configManager.Save(
+                    config.ClientId,
+                    config.ClientSecret,
+                    config.PlaylistId,
+                    config.DownloadFolder
+                );
+            
+                return Ok(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
         }
     
         [HttpGet("check-ytdlp")]
@@ -75,6 +88,11 @@ namespace SpotifyDownloader.Scripts.Controllers
             }
         
             var downloadFolder = _configManager.DownloadFolder;
+        
+            if (string.IsNullOrEmpty(downloadFolder))
+            {
+                return BadRequest(new { error = "Download folder not configured" });
+            }
         
             if (!Directory.Exists(downloadFolder))
             {
@@ -133,7 +151,30 @@ namespace SpotifyDownloader.Scripts.Controllers
         public IActionResult GetProgress()
         {
             var state = _stateManager.GetState();
-            return Ok(state);
+            return Ok(new
+            {
+                in_progress = state.InProgress,
+                current_track = state.CurrentTrack,
+                progress = state.Progress,
+                total = state.Total,
+                completed = state.Completed,
+                failed = state.Failed,
+                results = state.Results
+            });
+        }
+    
+        [HttpPost("clear-history")]
+        public IActionResult ClearHistory()
+        {
+            try
+            {
+                _database.ClearAll();
+                return Ok(new { success = true, message = "Download history cleared successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
         }
     
         [HttpGet("stats")]
