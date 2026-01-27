@@ -5,51 +5,82 @@ echo   SPOTIFY PLAYLIST DOWNLOADER - C#
 echo ========================================
 echo.
 
-dotnet --version >nul 2>&1
+REM Check for .NET SDK
+where dotnet >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
     echo ERROR: .NET SDK is not installed or not in PATH
-    echo Please install .NET 10.0 or 8.0+ from: https://dotnet.microsoft.com/download/dotnet
-    echo Make sure to install the x64 version!
+    echo Please install .NET 8.0+ from: https://dotnet.microsoft.com/download/dotnet/8.0
     echo.
     pause
     exit /b 1
 )
 
-echo Found .NET SDK
-dotnet --version
+for /f "tokens=*" %%i in ('dotnet --version') do set DOTNET_VERSION=%%i
+echo [OK] Found .NET SDK: %DOTNET_VERSION%
 echo.
 
+REM Check for yt-dlp
 echo [1/2] Checking yt-dlp...
-yt-dlp --version >nul 2>&1
+where yt-dlp >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo WARNING: yt-dlp not found!
-    echo Please install: winget install yt-dlp
-    echo.
+    if not exist "yt-dlp.exe" (
+        echo.
+        echo [WARNING] yt-dlp not found!
+        echo.
+        echo Install options:
+        echo   pip:      pip install yt-dlp
+        echo   winget:   winget install yt-dlp
+        echo   scoop:    scoop install yt-dlp
+        echo   Or download from: https://github.com/yt-dlp/yt-dlp/releases
+        echo.
+        choice /C YN /M "Continue anyway"
+        if errorlevel 2 exit /b 1
+    ) else (
+        echo [OK] Found yt-dlp.exe in current directory
+    )
+) else (
+    for /f "tokens=*" %%i in ('yt-dlp --version') do set YTDLP_VERSION=%%i
+    echo [OK] Found yt-dlp: %YTDLP_VERSION%
 )
-
-echo [2/2] Starting application...
-echo.
-echo Opening browser at: http://localhost:5000
-echo.
-echo If the browser shows an error, check the console below for details.
-echo Press Ctrl+C to stop the server
 echo.
 
-timeout /t 2 >nul
+REM Check for ffmpeg
+echo [2/2] Checking ffmpeg...
+where ffmpeg >nul 2>nul
+if %ERRORLEVEL% NEQ 0 (
+    if not exist "ffmpeg.exe" (
+        echo.
+        echo [WARNING] ffmpeg not found!
+        echo.
+        echo Install options:
+        echo   winget:   winget install ffmpeg
+        echo   scoop:    scoop install ffmpeg
+        echo   choco:    choco install ffmpeg
+        echo   Or download from: https://ffmpeg.org/download.html
+        echo.
+        choice /C YN /M "Continue anyway"
+        if errorlevel 2 exit /b 1
+    ) else (
+        echo [OK] Found ffmpeg.exe in current directory
+    )
+) else (
+    echo [OK] Found ffmpeg in PATH
+)
+echo.
+
+echo Starting application...
+echo.
+echo [WEB] Opening browser at: http://localhost:5000
+echo [STOP] Press Ctrl+C to stop the server
+echo.
+echo ========================================
+echo.
+
+REM Wait a moment before opening browser
+timeout /t 2 /nobreak >nul
+
+REM Open default browser
 start http://localhost:5000
 
+REM Run the application
 dotnet run
-set EXIT_CODE=%ERRORLEVEL%
-
-echo.
-echo ========================================
-if %EXIT_CODE% NEQ 0 (
-    echo Application exited with error code: %EXIT_CODE%
-    echo See error messages above for details
-) else (
-    echo Application stopped
-)
-echo ========================================
-echo.
-pause
