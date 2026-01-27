@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using SpotifyDownloader.Scripts.Data;
 using SpotifyDownloader.Scripts.Features.Spotify;
@@ -83,8 +84,8 @@ namespace SpotifyDownloader.Scripts.Features.Download
             string finalPath = GetUniqueFilepath(basePath);
         
             string searchQuery = $"{track.Artist} {track.Name}";
-            string ytdlpCmd = File.Exists("yt-dlp.exe") ? "yt-dlp.exe" : "yt-dlp";
-            string ffmpegPath = File.Exists("ffmpeg.exe") ? Path.GetFullPath("ffmpeg.exe") : "ffmpeg";
+            string ytdlpCmd = GetExecutablePath("yt-dlp");
+            string ffmpegPath = GetExecutablePath("ffmpeg");
         
             string outputTemplate = Path.Combine(downloadFolder, $"{safeName}.%(ext)s");
         
@@ -135,7 +136,15 @@ namespace SpotifyDownloader.Scripts.Features.Download
                     
                         if (!string.IsNullOrEmpty(track.AlbumArtUrl))
                         {
-                            await EmbedAlbumArtAsync(finalPath, track.AlbumArtUrl, downloadFolder, safeName);
+                            bool artEmbedded = await EmbedAlbumArtAsync(finalPath, track.AlbumArtUrl, downloadFolder, safeName);
+                            if (artEmbedded)
+                            {
+                                Console.WriteLine($"✓ Album art embedded for: {track.Name}");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"⚠ Could not embed album art for: {track.Name}");
+                            }
                         }
                     
                         _database.Add(track.Id, track.Name, track.Artist, finalPath);
@@ -164,39 +173,134 @@ namespace SpotifyDownloader.Scripts.Features.Download
             }
         }
     
-        private async Task EmbedAlbumArtAsync(string audioFile, string albumArtUrl, string downloadFolder, string safeName)
+        private async Task<bool> EmbedAlbumArtAsync(string audioFile, string albumArtUrl, string downloadFolder, string safeName)
         {
             string artworkPath = Path.Combine(downloadFolder, $"{safeName}_cover.jpg");
+            string tempOutput = Path.Combine(downloadFolder, $"{safeName}_temp.mp3");
         
             try
             {
+                Console.WriteLine($"Downloading album art for: {safeName}");
                 using HttpClient client = new();
+                client.Timeout = TimeSpan.FromSeconds(30);
                 var imageData = await client.GetByteArrayAsync(albumArtUrl);
                 await File.WriteAllBytesAsync(artworkPath, imageData);
+                
+                Console.WriteLine($"Album art downloaded: {artworkPath} ({imageData.Length} bytes)");
             
-                string ffmpegCmd = File.Exists("ffmpeg.exe") ? "ffmpeg.exe" : "ffmpeg";
-                string tempOutput = Path.Combine(downloadFolder, $"{safeName}_temp.mp3");
+                string ffmpegCmd = GetExecutablePath("ffmpeg");
             
                 ProcessStartInfo startInfo = new()
                 {
                     FileName = ffmpegCmd,
-                    Arguments = $"-i \"{audioFile}\" -i \"{artworkPath}\" -map 0:0 -map 1:0 -c copy -id3v2_version 3 -metadata:s:v title=\"Album cover\" -metadata:s:v comment=\"Cover (front)\" \"{tempOutput}\"",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
+                
+                startInfo.ArgumentList.Add("-i");
+                startInfo.ArgumentList.Add(audioFile);
+                startInfo.ArgumentList.Add("-i");
+                startInfo.ArgumentList.Add(artworkPath);
+                startInfo.ArgumentList.Add("-map");
+                startInfo.ArgumentList.Add("0:a");
+                startInfo.ArgumentList.Add("-map");
+                startInfo.ArgumentList.Add("1:0");
+                startInfo.ArgumentList.Add("-c:a");
+                startInfo.ArgumentList.Add("copy");
+                startInfo.ArgumentList.Add("-c:v");
+                startInfo.ArgumentList.Add("mjpeg");
+                startInfo.ArgumentList.Add("-disposition:v");
+                startInfo.ArgumentList.Add("attached_pic");
+                startInfo.ArgumentList.Add("-metadata:s:v");
+                startInfo.ArgumentList.Add("title=Album cover");
+                startInfo.ArgumentList.Add("-metadata:s:v");
+                startInfo.ArgumentList.Add("comment=Cover (front)");
+                startInfo.ArgumentList.Add("-id3v2_version");
+                startInfo.ArgumentList.Add("3");
+                startInfo.ArgumentList.Add("-y");
+                startInfo.ArgumentList.Add(tempOutput);
             
+                Console.WriteLine($"Running ffmpeg to embed album art...");
+                
                 using Process process = new();
                 process.StartInfo = startInfo;
+                
+                string stdOutput = "";
+                string stdError = "";
+                
+                process.OutputDataReceived += (sender, e) =>
+                {
+                    if (!string.IsNullOrEmpty(e.Data))
+                        stdOutput += e.Data + "\n";
+                };
+                
+                process.ErrorDataReceived += (sender, e) =>
+                {
+                    if (!string.IsNullOrEmpty(e.Data))
+                        stdError += e.Data + "\n";
+                };
+                
                 process.Start();
-                await process.WaitForExitAsync(TimeSpan.FromSeconds(30));
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+                
+                bool completed = await process.WaitForExitAsync(TimeSpan.FromSeconds(30));
             
-                if (File.Exists(tempOutput))
+                if (!completed)
+                {
+                    Console.WriteLine($"✗ ffmpeg timeout for {safeName}");
+                    return false;
+                }
+                
+                if (process.ExitCode != 0)
+                {
+                    Console.WriteLine($"✗ ffmpeg failed with exit code {process.ExitCode}");
+                    Console.WriteLine($"Error output: {stdError}");
+                    return false;
+                }
+                
+                if (!File.Exists(tempOutput))
+                {
+                    Console.WriteLine($"✗ Output file not created: {tempOutput}");
+                    return false;
+                }
+                
+                FileInfo tempInfo = new(tempOutput);
+                if (tempInfo.Length == 0)
+                {
+                    Console.WriteLine($"✗ Output file is empty");
+                    File.Delete(tempOutput);
+                    return false;
+                }
+                
+                Console.WriteLine($"✓ Album art embedded successfully. Replacing original file...");
+                
+                await Task.Delay(200);
+                
+                try
                 {
                     File.Delete(audioFile);
                     File.Move(tempOutput, audioFile);
+                    Console.WriteLine($"✓ File replaced: {audioFile}");
+                    return true;
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"✗ Failed to replace file: {ex.Message}");
+                    if (File.Exists(tempOutput) && !File.Exists(audioFile))
+                    {
+                        File.Move(tempOutput, audioFile);
+                        return true;
+                    }
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"✗ Exception embedding album art for {safeName}: {ex.Message}");
+                return false;
             }
             finally
             {
@@ -205,13 +309,46 @@ namespace SpotifyDownloader.Scripts.Features.Download
                     try
                     {
                         File.Delete(artworkPath);
+                        Console.WriteLine($"Cleaned up: {artworkPath}");
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        
+                        Console.WriteLine($"⚠ Could not delete artwork file: {ex.Message}");
+                    }
+                }
+                
+                if (File.Exists(tempOutput))
+                {
+                    try
+                    {
+                        File.Delete(tempOutput);
+                        Console.WriteLine($"Cleaned up: {tempOutput}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"⚠ Could not delete temp file: {ex.Message}");
                     }
                 }
             }
+        }
+    
+        private static string GetExecutablePath(string executable)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                string exePath = $"{executable}.exe";
+                if (File.Exists(exePath))
+                {
+                    return Path.GetFullPath(exePath);
+                }
+            }
+            
+            if (File.Exists(executable))
+            {
+                return Path.GetFullPath(executable);
+            }
+            
+            return executable;
         }
     
         private static string SanitizeFilename(string filename)
@@ -240,21 +377,27 @@ namespace SpotifyDownloader.Scripts.Features.Download
     
         public static bool CheckYtDlp()
         {
-            return CheckCommandExists("yt-dlp") || File.Exists("yt-dlp.exe");
+            return CheckCommandExists("yt-dlp") || File.Exists("yt-dlp.exe") || File.Exists("yt-dlp");
         }
     
         public static bool CheckFfmpeg()
         {
-            return CheckCommandExists("ffmpeg") || File.Exists("ffmpeg.exe");
+            return CheckCommandExists("ffmpeg") || File.Exists("ffmpeg.exe") || File.Exists("ffmpeg");
         }
     
         private static bool CheckCommandExists(string command)
         {
             try
             {
+                string executable = command;
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    executable = $"{command}.exe";
+                }
+                
                 ProcessStartInfo startInfo = new()
                 {
-                    FileName = command,
+                    FileName = executable,
                     Arguments = "--version",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -271,7 +414,29 @@ namespace SpotifyDownloader.Scripts.Features.Download
             }
             catch
             {
-                return false;
+                try
+                {
+                    ProcessStartInfo startInfo = new()
+                    {
+                        FileName = command,
+                        Arguments = "--version",
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                
+                    using Process process = new();
+                    process.StartInfo = startInfo;
+                    process.Start();
+                    process.WaitForExit(5000);
+                
+                    return process.ExitCode == 0;
+                }
+                catch
+                {
+                    return false;
+                }
             }
         }
     }
