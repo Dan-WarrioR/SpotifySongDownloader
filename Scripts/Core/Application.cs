@@ -51,9 +51,11 @@ namespace SpotifyDownloader.Scripts.Core
         private void ConfigureServices(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            builder.Environment.WebRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
         
+            builder.Services.AddRazorPages();
             builder.Services.AddControllers();
-            builder.Services.AddEndpointsApiExplorer();
         
             builder.Services.AddSingleton<ConfigManager>();
             builder.Services.AddSingleton<DownloadDatabase>();
@@ -83,8 +85,12 @@ namespace SpotifyDownloader.Scripts.Core
         
             _app.UseCors();
             _app.UseStaticFiles();
+            _app.UseRouting();
+            
+            _app.MapRazorPages();
             _app.MapControllers();
-            _app.MapGet("/", () => Results.Content(HtmlTemplate.Content, "text/html"));
+            
+            _app.MapGet("/", () => Results.Redirect("/Index"));
         }
     
         private void StartServer()

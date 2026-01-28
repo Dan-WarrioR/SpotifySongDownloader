@@ -1,0 +1,200 @@
+﻿@page
+@model SpotifyDownloader.Pages.Index
+@{
+    ViewData["Title"] = "Spotify Downloader";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/site.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎵 Spotify Downloader</h1>
+            <p class="subtitle">Download your favorite playlists with album art</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+            <button class="tab" onclick="switchTab('config')">⚙️ Configuration</button>
+        </div>
+
+        <!-- DASHBOARD TAB -->
+        <div id="dashboard-tab" class="tab-content active">
+            <div class="card">
+                <h2 class="card-title">Current Setup</h2>
+                
+                <div class="info-grid">
+                    <div class="info-box">
+                        <div class="info-label">Playlists</div>
+                        <div class="info-value" id="infoPlaylistCount">0</div>
+                        <div class="info-value text list empty" id="infoPlaylistList" style="margin-top: 8px;"></div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-label">Download Folder</div>
+                        <div class="info-value text empty" id="infoDownloadFolder">Not configured</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-label">Total Downloaded</div>
+                        <div class="info-value" id="infoTotalDownloaded">0</div>
+                    </div>
+                </div>
+                
+                <div class="tools-check" id="toolsCheck">
+                    <div style="flex: 1; font-weight: 600; color: var(--text-secondary);">Required Tools:</div>
+                    <div class="tool-status" id="ytdlpStatus">
+                        <span>yt-dlp</span>
+                    </div>
+                    <div class="tool-status" id="ffmpegStatus">
+                        <span>ffmpeg</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Download Playlist</h2>
+                
+                <div id="statusMessage"></div>
+                <button id="downloadBtn" class="btn-download" disabled><span>⬇️ Start Download</span></button>
+                
+                <div id="progressSection" class="progress-section">
+                    <div class="current-track" id="currentTrack"></div>
+                    <div class="progress-text" id="progressText">0%</div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    <div class="stats">
+                        <div class="stat">
+                            <div class="stat-value" id="completedCount">0</div>
+                            <div class="stat-label">Completed</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="failedCount">0</div>
+                            <div class="stat-label">Failed</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="totalCount">0</div>
+                            <div class="stat-label">Total</div>
+                        </div>
+                    </div>
+                    <div id="resultsList" class="results-list"></div>
+                </div>
+                
+                <div class="danger-zone">
+                    <h3>⚠️ Re-download All Tracks</h3>
+                    <p>
+                        This will clear your download history and re-download all tracks from the playlist. 
+                        Use this if you have corrupted files or missing album art.
+                    </p>
+                    <button id="clearHistoryBtn" class="btn-danger">🔄 Clear History & Re-download All</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONFIGURATION TAB -->
+        <div id="config-tab" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">Spotify API Configuration</h2>
+                
+                <form id="configForm">
+                    <div class="form-group">
+                        <label for="clientId">Spotify Client ID</label>
+                        <input type="text" id="clientId" placeholder="Enter your Spotify Client ID" required>
+                        <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+                            Get this from <a href="https://developer.spotify.com/dashboard" target="_blank" style="color: var(--accent);">Spotify Developer Dashboard</a>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="clientSecret">Spotify Client Secret</label>
+                        <input type="text" id="clientSecret" placeholder="Enter your Spotify Client Secret" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="newPlaylistId">Spotify Playlists</label>
+                        <div class="playlist-input-group">
+                            <input type="text" id="newPlaylistId" placeholder="Enter playlist ID (e.g., 37i9dQZF1DXcBWIGoYBM5M)">
+                            <button type="button" class="btn-secondary" onclick="addPlaylist()">+ Add</button>
+                        </div>
+                        <div class="playlist-list" id="playlistList">
+                            <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
+                                No playlists added yet
+                            </div>
+                        </div>
+                        <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+                            💡 You can add multiple playlists. They'll all be downloaded together.
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="fileNamePattern">File Naming Pattern</label>
+                        <select id="fileNamePattern" onchange="updateFileNamePreview()">
+                            <option value="track">Track Name</option>
+                            <option value="artist-track">Artist - Track Name</option>
+                            <option value="track-artist">Track Name - Artist</option>
+                            <option value="artist-album-track">Artist - Album - Track Name</option>
+                        </select>
+                        <div class="file-name-preview" id="fileNamePreview">
+                            Example: Song Name.mp3
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="downloadFolder">Download Folder</label>
+                        <div class="input-group">
+                            <input type="text" id="downloadFolder" placeholder="Path to download folder" required>
+                            <button type="button" class="btn-secondary" onclick="setDefaultMusicFolder()">🎵 Music</button>
+                            <button type="button" class="btn-secondary" onclick="setDefaultDownloadsFolder()">📥 Downloads</button>
+                        </div>
+                        <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-secondary); font-style: italic;">
+                            Quick buttons will set common default paths for your OS
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary" style="width: 100%;">💾 Save Configuration</button>
+                </form>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">Current Configuration</h2>
+                
+                <div class="info-grid">
+                    <div class="info-box">
+                        <div class="info-label">Client ID</div>
+                        <div class="info-value text empty" id="displayClientId">Not set</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-label">Client Secret</div>
+                        <div class="info-value text empty" id="displayClientSecret">Not set</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-label">Playlists</div>
+                        <div class="info-value empty" id="displayPlaylistCount">0</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-label">File Naming</div>
+                        <div class="info-value text empty" id="displayFileNamePattern">Not set</div>
+                    </div>
+                </div>
+                
+                <div class="info-grid" style="margin-top: 16px;">
+                    <div class="info-box" style="grid-column: 1 / -1;">
+                        <div class="info-label">Download Folder</div>
+                        <div class="info-value text empty" id="displayDownloadFolder">Not set</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/js/site.js"></script>
+</body>
+</html>
