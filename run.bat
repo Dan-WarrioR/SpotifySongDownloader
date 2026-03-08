@@ -76,11 +76,5 @@ echo.
 echo ========================================
 echo.
 
-REM Wait a moment before opening browser
-timeout /t 2 /nobreak >nul
-
-REM Open default browser
-start http://localhost:5000
-
-REM Run the application
+REM Run the application (browser opens automatically once the server is ready)
 dotnet run
