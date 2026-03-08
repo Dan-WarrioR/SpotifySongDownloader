@@ -10,18 +10,23 @@ Download Spotify playlists and YouTube videos as high-quality MP3s with embedded
 
 ## ✨ Features
 
-| Feature | Details |
-|---|---|
-| 🎵 **Spotify playlists** | Download full playlists by ID — add as many as you want |
-| ▶️ **YouTube URLs** | Paste any YouTube link and download it as MP3 |
-| 🔍 **Auto-fetch metadata** | One click fills in title and artist from YouTube |
-| 🖼️ **Album art** | Embedded automatically into every MP3 (ID3v2.3) |
-| ⚡ **Concurrent downloads** | 3 tracks downloaded in parallel for speed |
-| ✕ **Cancel anytime** | Stop a running batch without killing the app |
-| 🔄 **Smart skip** | Already-downloaded tracks are detected and skipped |
-| 📊 **Live progress** | Real-time progress bar, per-track results, counts |
-| 📂 **Open folder** | Jump straight to your download folder from the UI |
-| 📋 **Download history** | Full log of every track — Spotify and YouTube combined |
+| Feature                      | Details                                                                        |
+|------------------------------|--------------------------------------------------------------------------------|
+| 🎵 **Spotify playlists**     | Download full playlists by ID — add as many as you want                        |
+| ▶️ **YouTube URLs**          | Paste any YouTube link and download it as MP3                                  |
+| 🔍 **Auto-fetch metadata**   | One click fills in title and artist from YouTube                               |
+| 🖼️ **Album art**            | Embedded automatically into every MP3 (ID3v2.3)                                |
+| ⚡ **Concurrent downloads**   | 3 tracks downloaded in parallel for speed                                      |
+| ✕ **Cancel anytime**         | Stop a running batch without killing the app                                   |
+| 🔄 **Smart skip**            | Already-downloaded tracks are detected and skipped                             |
+| 📊 **Live progress**         | Real-time progress bar, per-track results, counts                              |
+| 📂 **Open folder**           | Jump straight to your download folder from the UI                              |
+| 📋 **Download history**      | Full log of every track — Spotify and YouTube combined                         |
+| ⏭️ **SponsorBlock**          | Automatically remove sponsor/promo segments from downloads                     |
+| 🎚️ **Volume normalization** | Normalize loudness to EBU R128 so all tracks play at consistent volume         |
+| 🔁 **Auto-sync on startup**  | Automatically downloads new playlist tracks every time the app launches        |
+| 📝 **File naming patterns**  | Choose from Track, Artist–Track, Track–Artist, or Artist–Album–Track           |
+| ⬆️ **Auto-update yt-dlp**    | Checks for and applies yt-dlp updates on every launch; manual button in the UI |
 
 ---
 
@@ -34,9 +39,10 @@ You need these installed and accessible from PATH (or placed next to the executa
 - **[yt-dlp](https://github.com/yt-dlp/yt-dlp/releases)** — handles all downloading
 - **[ffmpeg](https://ffmpeg.org/download.html)** — handles audio conversion and metadata embedding
 
-**Windows one-liner:**
+**Windows:**
 ```powershell
-winget install yt-dlp && winget install ffmpeg
+winget install yt-dlp.yt-dlp
+winget install Gyan.FFmpeg
 ```
 
 For Spotify downloads you also need a free API app:
@@ -127,10 +133,10 @@ The downloaded file is added to your download history alongside Spotify tracks.
 
 All persistent data lives in a `Data/` folder next to the executable:
 
-| File | Contents |
-|---|---|
-| `Data/config.json` | Spotify credentials, playlist IDs, download folder, naming pattern |
-| `Data/downloaded_tracks.json` | Full history — track name, artist, file path, source, timestamp |
+| File                          | Contents                                                           |
+|-------------------------------|--------------------------------------------------------------------|
+| `Data/config.json`            | Spotify credentials, playlist IDs, download folder, naming pattern |
+| `Data/downloaded_tracks.json` | Full history — track name, artist, file path, source, timestamp    |
 
 These files are created automatically on first run. Back them up if you want to preserve history when moving the app.
 
@@ -154,6 +160,7 @@ Then rebuild.
 - Run `yt-dlp --version` and `ffmpeg -version` in a terminal to confirm they're reachable
 - If using the portable exe, make sure `yt-dlp.exe` and `ffmpeg.exe` are in the same folder as `SpotifyDownloader.exe`
 - The Dashboard shows a green/red status indicator for both tools
+- **Outdated yt-dlp** is the most common cause — YouTube returns 403 errors when yt-dlp is stale. Click the **⬆️ Update** button on the Dashboard to update it automatically
 </details>
 
 <details>
@@ -169,7 +176,7 @@ Then rebuild.
 
 - The URL must be a direct video link, not a playlist or channel page
 - Private or age-restricted videos cannot be fetched
-- Update yt-dlp: `yt-dlp -U`
+- Click the **⬆️ Update** button on the Dashboard, or run `yt-dlp -U` in a terminal
 </details>
 
 <details>
@@ -212,12 +219,12 @@ SpotifyDownloader/
 
 ## 🔧 Dependencies
 
-| Tool | Purpose |
-|---|---|
-| [yt-dlp](https://github.com/yt-dlp/yt-dlp) | Downloads audio from YouTube and other sites |
-| [ffmpeg](https://ffmpeg.org/) | Converts to MP3, embeds metadata and album art |
+| Tool                                              | Purpose                                         |
+|---------------------------------------------------|-------------------------------------------------|
+| [yt-dlp](https://github.com/yt-dlp/yt-dlp)        | Downloads audio from YouTube and other sites    |
+| [ffmpeg](https://ffmpeg.org/)                     | Converts to MP3, embeds metadata and album art  |
 | [Spotify Web API](https://developer.spotify.com/) | Fetches track lists and metadata from playlists |
-| ASP.NET Core 10 | Web server and API |
+| ASP.NET Core 10                                   | Web server and API                              |
 
 ---
 
