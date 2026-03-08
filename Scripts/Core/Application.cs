@@ -112,7 +112,11 @@ namespace SpotifyDownloader.Scripts.Core
             _app.Lifetime.ApplicationStarted.Register(() =>
             {
                 OpenBrowser("http://localhost:5000");
-                _ = Task.Run(async () => await RunAutoSyncAsync());
+                _ = Task.Run(async () =>
+                {
+                    await RunYtDlpUpdateAsync();
+                    await RunAutoSyncAsync();
+                });
             });
 
             _app.Run("http://localhost:5000");
@@ -127,6 +131,32 @@ namespace SpotifyDownloader.Scripts.Core
             catch (Exception ex)
             {
                 Console.WriteLine($"Could not open browser automatically: {ex.Message}");
+            }
+        }
+
+        private async Task RunYtDlpUpdateAsync()
+        {
+            if (_app == null)
+            {
+                return;
+            }
+
+            Console.WriteLine("[yt-dlp] Checking for updates...");
+
+            var toolPaths = _app.Services.GetRequiredService<ToolPaths>();
+            var result = await toolPaths.UpdateYtDlpAsync();
+
+            if (result.Updated)
+            {
+                Console.WriteLine($"[yt-dlp] Updated to latest version");
+            }
+            else if (result.AlreadyUpToDate)
+            {
+                Console.WriteLine("[yt-dlp] Already up to date");
+            }
+            else
+            {
+                Console.WriteLine($"[yt-dlp] Update check result: {result.Message}");
             }
         }
 

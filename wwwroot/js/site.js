@@ -507,6 +507,35 @@ async function fetchYoutubeInfo() {
     }
 }
 
+// ===== UPDATE YT-DLP =====
+async function updateYtDlp() {
+    const btn = document.getElementById('updateYtdlpBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Updating...';
+
+    try {
+        const response = await fetch('/api/update-ytdlp', { method: 'POST' });
+        const data = await response.json();
+
+        if (response.ok) {
+            if (data.updated) {
+                showStatus('✓ yt-dlp updated to latest version!', 'success');
+            } else if (data.already_up_to_date) {
+                showStatus('ℹ️ yt-dlp is already up to date', 'warning');
+            } else {
+                showStatus('⚠️ yt-dlp update: ' + data.message, 'warning');
+            }
+        } else {
+            showStatus('✗ Update failed: ' + (data.error || 'Unknown error'), 'error');
+        }
+    } catch (e) {
+        showStatus('✗ Error: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '⬆️ Update';
+    }
+}
+
 // ===== INITIALIZE =====
 loadConfig();
 checkTools();

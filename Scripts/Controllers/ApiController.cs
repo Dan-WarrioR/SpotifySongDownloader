@@ -92,6 +92,20 @@ namespace SpotifyDownloader.Scripts.Controllers
             return Ok(new { installed = ToolPaths.CheckFfmpeg() });
         }
 
+        [HttpPost("update-ytdlp")]
+        public async Task<IActionResult> UpdateYtDlp()
+        {
+            try
+            {
+                var result = await _toolPaths.UpdateYtDlpAsync();
+                return Ok(new { updated = result.Updated, already_up_to_date = result.AlreadyUpToDate, message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
         [HttpPost("open-folder")]
         public IActionResult OpenFolder()
         {

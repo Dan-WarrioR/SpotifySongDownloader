@@ -3,6 +3,13 @@ using System.Runtime.InteropServices;
 
 namespace SpotifyDownloader.Scripts.Core
 {
+    public class YtDlpUpdateResult
+    {
+        public bool Updated { get; set; }
+        public bool AlreadyUpToDate { get; set; }
+        public string Message { get; set; } = "";
+    }
+
     public class ToolPaths
     {
         public string YtDlp { get; }
@@ -50,6 +57,53 @@ namespace SpotifyDownloader.Scripts.Core
 
             return RunVersionCheck(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? $"{name}.exe" : name)
                 || RunVersionCheck(name);
+        }
+
+        public async Task<YtDlpUpdateResult> UpdateYtDlpAsync()
+        {
+            try
+            {
+                ProcessStartInfo startInfo = new()
+                {
+                    FileName = YtDlp,
+                    Arguments = "-U",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using Process process = new();
+                process.StartInfo = startInfo;
+                process.Start();
+
+                Task<string> stdoutTask = process.StandardOutput.ReadToEndAsync();
+                Task<string> stderrTask = process.StandardError.ReadToEndAsync();
+                bool completed = await process.WaitForExitAsync(TimeSpan.FromSeconds(60));
+
+                if (!completed)
+                {
+                    return new YtDlpUpdateResult { Message = "Update timed out" };
+                }
+
+                string output = (await stdoutTask + await stderrTask).Trim();
+
+                if (output.Contains("Updated yt-dlp"))
+                {
+                    return new YtDlpUpdateResult { Updated = true, Message = output };
+                }
+
+                if (output.Contains("up to date") || output.Contains("uptodate"))
+                {
+                    return new YtDlpUpdateResult { AlreadyUpToDate = true, Message = output };
+                }
+
+                return new YtDlpUpdateResult { Message = output };
+            }
+            catch (Exception ex)
+            {
+                return new YtDlpUpdateResult { Message = $"Error: {ex.Message}" };
+            }
         }
 
         private static bool RunVersionCheck(string executable)
