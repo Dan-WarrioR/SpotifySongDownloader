@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model SpotifyDownloader.Pages.Index
 @{
     ViewData["Title"] = "Spotify Downloader";
@@ -18,20 +18,21 @@
 <body>
     <div class="container">
         <header>
-            <h1>🎵 Spotify Downloader</h1>
-            <p class="subtitle">Download your favorite playlists with album art</p>
+            <h1>🎵 Music Downloader</h1>
+            <p class="subtitle">Download from Spotify playlists or YouTube with custom metadata</p>
         </header>
 
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('dashboard')">📊 Dashboard</button>
-            <button class="tab" onclick="switchTab('config')">⚙️ Configuration</button>
+            <button class="tab active" onclick="switchTab('dashboard', event)">📊 Dashboard</button>
+            <button class="tab" onclick="switchTab('youtube', event)">▶️ YouTube</button>
+            <button class="tab" onclick="switchTab('config', event)">⚙️ Configuration</button>
         </div>
 
         <!-- DASHBOARD TAB -->
         <div id="dashboard-tab" class="tab-content active">
             <div class="card">
                 <h2 class="card-title">Current Setup</h2>
-                
+
                 <div class="info-grid">
                     <div class="info-box">
                         <div class="info-label">Playlists</div>
@@ -41,13 +42,14 @@
                     <div class="info-box">
                         <div class="info-label">Download Folder</div>
                         <div class="info-value text empty" id="infoDownloadFolder">Not configured</div>
+                        <button class="btn-secondary" onclick="openFolder()" style="margin-top: 8px; font-size: 0.8rem; padding: 4px 10px;">📂 Open</button>
                     </div>
                     <div class="info-box">
                         <div class="info-label">Total Downloaded</div>
                         <div class="info-value" id="infoTotalDownloaded">0</div>
                     </div>
                 </div>
-                
+
                 <div class="tools-check" id="toolsCheck">
                     <div style="flex: 1; font-weight: 600; color: var(--text-secondary);">Required Tools:</div>
                     <div class="tool-status" id="ytdlpStatus">
@@ -60,11 +62,11 @@
             </div>
 
             <div class="card">
-                <h2 class="card-title">Download Playlist</h2>
-                
+                <h2 class="card-title">Download Playlists</h2>
+
                 <div id="statusMessage"></div>
                 <button id="downloadBtn" class="btn-download" disabled><span>⬇️ Start Download</span></button>
-                
+
                 <div id="progressSection" class="progress-section">
                     <div class="current-track" id="currentTrack"></div>
                     <div class="progress-text" id="progressText">0%</div>
@@ -85,16 +87,78 @@
                             <div class="stat-label">Total</div>
                         </div>
                     </div>
+                    <button id="cancelBtn" class="btn-danger" onclick="cancelDownload()" style="display: none; margin-top: 12px; width: 100%;">✕ Cancel Download</button>
                     <div id="resultsList" class="results-list"></div>
                 </div>
-                
+
                 <div class="danger-zone">
                     <h3>⚠️ Re-download All Tracks</h3>
                     <p>
-                        This will clear your download history and re-download all tracks from the playlist. 
+                        This will clear your download history and re-download all tracks from the playlist.
                         Use this if you have corrupted files or missing album art.
                     </p>
                     <button id="clearHistoryBtn" class="btn-danger">🔄 Clear History & Re-download All</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- YOUTUBE TAB -->
+        <div id="youtube-tab" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">Download from YouTube</h2>
+
+                <div id="youtubeStatus"></div>
+
+                <div class="form-group">
+                    <label for="youtubeUrl">YouTube URL <span class="required-star">*</span></label>
+                    <div class="input-group">
+                        <input type="text" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=...">
+                        <button type="button" class="btn-secondary" id="fetchInfoBtn" onclick="fetchYoutubeInfo()">🔍 Fetch Info</button>
+                    </div>
+                </div>
+
+                <div class="yt-meta-grid">
+                    <div class="form-group">
+                        <label for="youtubeTitle">Title</label>
+                        <input type="text" id="youtubeTitle" placeholder="Song title">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="youtubeArtist">Artist</label>
+                        <input type="text" id="youtubeArtist" placeholder="Artist name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="youtubeAlbum">Album <span class="optional-label">(optional)</span></label>
+                        <input type="text" id="youtubeAlbum" placeholder="Album name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="youtubeYear">Year <span class="optional-label">(optional)</span></label>
+                        <input type="text" id="youtubeYear" placeholder="2024" maxlength="4">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="youtubeCoverArt">Cover Art URL <span class="optional-label">(optional)</span></label>
+                    <input type="text" id="youtubeCoverArt" placeholder="https://example.com/cover.jpg">
+                </div>
+
+                <div class="form-group">
+                    <label for="youtubeFolder">
+                        Download Folder
+                        <span class="optional-label">(leave empty to use configured folder)</span>
+                    </label>
+                    <input type="text" id="youtubeFolder" placeholder="Leave empty to use default">
+                </div>
+
+                <button id="youtubeDownloadBtn" class="btn-download" onclick="youtubeDownload()">
+                    <span>▶️ Download from YouTube</span>
+                </button>
+
+                <div id="youtubeProgressSection" class="progress-section">
+                    <div class="current-track" id="youtubeCurrentTitle"></div>
+                    <div id="youtubeResultItem"></div>
                 </div>
             </div>
         </div>
@@ -103,7 +167,7 @@
         <div id="config-tab" class="tab-content">
             <div class="card">
                 <h2 class="card-title">Spotify API Configuration</h2>
-                
+
                 <form id="configForm">
                     <div class="form-group">
                         <label for="clientId">Spotify Client ID</label>
@@ -112,12 +176,12 @@
                             Get this from <a href="https://developer.spotify.com/dashboard" target="_blank" style="color: var(--accent);">Spotify Developer Dashboard</a>
                         </div>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="clientSecret">Spotify Client Secret</label>
                         <input type="text" id="clientSecret" placeholder="Enter your Spotify Client Secret" required>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="newPlaylistId">Spotify Playlists</label>
                         <div class="playlist-input-group">
@@ -133,7 +197,7 @@
                             💡 You can add multiple playlists. They'll all be downloaded together.
                         </div>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="fileNamePattern">File Naming Pattern</label>
                         <select id="fileNamePattern" onchange="updateFileNamePreview()">
@@ -146,7 +210,7 @@
                             Example: Song Name.mp3
                         </div>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="downloadFolder">Download Folder</label>
                         <div class="input-group">
@@ -158,14 +222,41 @@
                             Quick buttons will set common default paths for your OS
                         </div>
                     </div>
-                    
+
+                    <div class="form-group">
+                        <label>Download Behaviour</label>
+                        <div class="toggle-group">
+                            <label class="toggle-item">
+                                <input type="checkbox" id="sponsorblock">
+                                <div class="toggle-info">
+                                    <span class="toggle-name">⏭️ SponsorBlock</span>
+                                    <span class="toggle-desc">Automatically skip sponsored segments. YouTube downloads remove all categories; Spotify searches remove sponsor and promo segments only.</span>
+                                </div>
+                            </label>
+                            <label class="toggle-item">
+                                <input type="checkbox" id="normalizeVolume">
+                                <div class="toggle-info">
+                                    <span class="toggle-name">🎚️ Volume Normalization</span>
+                                    <span class="toggle-desc">Normalize loudness to EBU R128 (-16 LUFS) so all tracks play at consistent volume. Requires a re-encode — slightly slower.</span>
+                                </div>
+                            </label>
+                            <label class="toggle-item">
+                                <input type="checkbox" id="autoSync">
+                                <div class="toggle-info">
+                                    <span class="toggle-name">🔄 Auto-sync on startup</span>
+                                    <span class="toggle-desc">Automatically check for and download new playlist tracks every time the app launches.</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
                     <button type="submit" class="btn-primary" style="width: 100%;">💾 Save Configuration</button>
                 </form>
             </div>
-            
+
             <div class="card">
                 <h2 class="card-title">Current Configuration</h2>
-                
+
                 <div class="info-grid">
                     <div class="info-box">
                         <div class="info-label">Client ID</div>
@@ -184,7 +275,7 @@
                         <div class="info-value text empty" id="displayFileNamePattern">Not set</div>
                     </div>
                 </div>
-                
+
                 <div class="info-grid" style="margin-top: 16px;">
                     <div class="info-box" style="grid-column: 1 / -1;">
                         <div class="info-label">Download Folder</div>

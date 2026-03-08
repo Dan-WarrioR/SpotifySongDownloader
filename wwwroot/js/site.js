@@ -3,7 +3,7 @@ let currentConfig = {};
 let playlists = [];
 
 // ===== TAB SWITCHING =====
-function switchTab(tabName) {
+function switchTab(tabName, event) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
 
@@ -16,28 +16,25 @@ async function loadConfig() {
     const response = await fetch('/api/config');
     currentConfig = await response.json();
 
-    // Update form inputs
     document.getElementById('clientId').value = currentConfig.client_id || '';
     document.getElementById('clientSecret').value = currentConfig.client_secret || '';
     document.getElementById('downloadFolder').value = currentConfig.download_folder || '';
     document.getElementById('fileNamePattern').value = currentConfig.file_name_pattern || 'track';
+    document.getElementById('sponsorblock').checked = !!currentConfig.sponsorblock;
+    document.getElementById('normalizeVolume').checked = !!currentConfig.normalize_volume;
+    document.getElementById('autoSync').checked = !!currentConfig.auto_sync;
 
-    // Load playlists
     playlists = currentConfig.playlist_ids || [];
     renderPlaylistList();
 
-    // Update display values
     updateDisplayValue('displayClientId', currentConfig.client_id);
     updateDisplayValue('displayClientSecret', currentConfig.client_secret);
     updateDisplayValue('displayDownloadFolder', currentConfig.download_folder);
     updateDisplayValue('displayFileNamePattern', getFileNamePatternLabel(currentConfig.file_name_pattern));
 
-    // Update dashboard info
     updateDisplayValue('infoDownloadFolder', currentConfig.download_folder);
     updatePlaylistDisplay();
     updateFileNamePreview();
-
-    // Enable download button if config is complete
     updateDownloadButton();
 }
 
@@ -101,10 +98,13 @@ function renderPlaylistList() {
     }
 
     container.innerHTML = playlists.map((id, index) => `
-        <div class="playlist-item">
+        <div class="playlist-item" data-playlist-id="${id}">
             <div class="playlist-info">
                 <div class="playlist-number">${index + 1}</div>
-                <div class="playlist-id">${id}</div>
+                <div>
+                    <div class="playlist-id">${id}</div>
+                    <div class="playlist-name" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;"></div>
+                </div>
             </div>
             <div class="playlist-actions">
                 <button type="button" class="btn-icon" onclick="downloadSinglePlaylist('${id}')" title="Download this playlist only">
@@ -116,6 +116,26 @@ function renderPlaylistList() {
             </div>
         </div>
     `).join('');
+
+    loadPlaylistNames();
+}
+
+async function loadPlaylistNames() {
+    for (const id of playlists) {
+        try {
+            const response = await fetch('/api/playlist-name?id=' + encodeURIComponent(id));
+            if (!response.ok) continue;
+            const data = await response.json();
+            if (!data.name || data.name === id) continue;
+            const item = document.querySelector(`.playlist-item[data-playlist-id="${id}"]`);
+            if (item) {
+                const nameEl = item.querySelector('.playlist-name');
+                if (nameEl) nameEl.textContent = data.name;
+            }
+        } catch {
+            // ignore per-playlist failures
+        }
+    }
 }
 
 function updatePlaylistDisplay() {
@@ -149,7 +169,7 @@ async function downloadSinglePlaylist(playlistId) {
     const response = await fetch('/api/download', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playlist_id: playlistId })
+        body: JSON.stringify({ PlaylistId: playlistId })
     });
     const data = await response.json();
 
@@ -241,7 +261,10 @@ document.getElementById('configForm').addEventListener('submit', async (e) => {
         client_secret: document.getElementById('clientSecret').value,
         playlist_ids: playlists,
         download_folder: document.getElementById('downloadFolder').value,
-        file_name_pattern: document.getElementById('fileNamePattern').value
+        file_name_pattern: document.getElementById('fileNamePattern').value,
+        sponsorblock: document.getElementById('sponsorblock').checked,
+        normalize_volume: document.getElementById('normalizeVolume').checked,
+        auto_sync: document.getElementById('autoSync').checked
     };
 
     await fetch('/api/config', {
@@ -255,7 +278,7 @@ document.getElementById('configForm').addEventListener('submit', async (e) => {
     await loadStats();
 });
 
-// ===== DOWNLOAD =====
+// ===== SPOTIFY DOWNLOAD =====
 document.getElementById('downloadBtn').addEventListener('click', async () => {
     if (document.getElementById('downloadBtn').disabled) return;
 
@@ -271,7 +294,7 @@ document.getElementById('downloadBtn').addEventListener('click', async () => {
             startProgressPolling();
         }
     } else {
-        showStatus('✗ ' + data.error, 'error');
+        showStatus('✗ ' + (data.error || 'Unknown error'), 'error');
     }
 });
 
@@ -306,6 +329,7 @@ function showStatus(message, type) {
 
 // ===== PROGRESS POLLING =====
 let pollingInterval;
+
 function startProgressPolling() {
     pollingInterval = setInterval(async () => {
         const response = await fetch('/api/download/progress');
@@ -315,6 +339,9 @@ function startProgressPolling() {
 
         if (!state.in_progress && state.total > 0) {
             clearInterval(pollingInterval);
+            if (state.is_cancelled) {
+                showStatus('⏹ Download cancelled', 'warning');
+            }
             await loadStats();
         }
     }, 500);
@@ -328,6 +355,11 @@ function updateProgress(state) {
     document.getElementById('failedCount').textContent = state.failed;
     document.getElementById('totalCount').textContent = state.total;
 
+    const cancelBtn = document.getElementById('cancelBtn');
+    if (cancelBtn) {
+        cancelBtn.style.display = state.in_progress ? 'block' : 'none';
+    }
+
     const resultsList = document.getElementById('resultsList');
     resultsList.innerHTML = state.results.map(r => `
         <div class="result-item ${r.success ? 'success' : 'error'}">
@@ -336,6 +368,143 @@ function updateProgress(state) {
             ${r.error ? `<div class="result-error">${r.error}</div>` : ''}
         </div>
     `).reverse().join('');
+}
+
+// ===== OPEN FOLDER =====
+async function openFolder() {
+    try {
+        const response = await fetch('/api/open-folder', { method: 'POST' });
+        if (!response.ok) {
+            const data = await response.json();
+            showStatus('✗ ' + (data.error || 'Could not open folder'), 'error');
+        }
+    } catch (e) {
+        showStatus('✗ Error: ' + e.message, 'error');
+    }
+}
+
+// ===== CANCEL DOWNLOAD =====
+async function cancelDownload() {
+    try {
+        await fetch('/api/download/cancel', { method: 'POST' });
+        showStatus('⏹ Cancelling download...', 'warning');
+    } catch (e) {
+        showStatus('✗ Error: ' + e.message, 'error');
+    }
+}
+
+// ===== YOUTUBE DOWNLOAD =====
+async function youtubeDownload() {
+    const url = document.getElementById('youtubeUrl').value.trim();
+
+    if (!url) {
+        showYoutubeStatus('⚠️ Please enter a YouTube URL', 'warning');
+        return;
+    }
+
+    const btn = document.getElementById('youtubeDownloadBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳ Downloading...</span>';
+
+    document.getElementById('youtubeProgressSection').classList.add('active');
+    document.getElementById('youtubeCurrentTitle').textContent =
+        document.getElementById('youtubeTitle').value.trim() || url;
+    document.getElementById('youtubeResultItem').innerHTML = '';
+
+    const request = {
+        url,
+        title: document.getElementById('youtubeTitle').value.trim(),
+        artist: document.getElementById('youtubeArtist').value.trim(),
+        album: document.getElementById('youtubeAlbum').value.trim(),
+        year: document.getElementById('youtubeYear').value.trim(),
+        cover_art_url: document.getElementById('youtubeCoverArt').value.trim(),
+        download_folder: document.getElementById('youtubeFolder').value.trim() || null
+    };
+
+    const response = await fetch('/api/youtube/download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        showYoutubeStatus('✗ ' + data.error, 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<span>▶️ Download from YouTube</span>';
+        document.getElementById('youtubeProgressSection').classList.remove('active');
+        return;
+    }
+
+    startYoutubeProgressPolling();
+}
+
+let youtubePollingInterval;
+
+function startYoutubeProgressPolling() {
+    youtubePollingInterval = setInterval(async () => {
+        const response = await fetch('/api/youtube/progress');
+        const state = await response.json();
+
+        if (!state.in_progress && state.success !== null) {
+            clearInterval(youtubePollingInterval);
+
+            const btn = document.getElementById('youtubeDownloadBtn');
+            btn.disabled = false;
+            btn.innerHTML = '<span>▶️ Download from YouTube</span>';
+
+            const resultEl = document.getElementById('youtubeResultItem');
+
+            if (state.success === true) {
+                resultEl.innerHTML = '<div class="result-item success"><div class="result-track">✓ Download complete</div></div>';
+                showYoutubeStatus('✓ Downloaded successfully!', 'success');
+                loadStats();
+            } else {
+                resultEl.innerHTML = `<div class="result-item error"><div class="result-track">✗ Download failed</div><div class="result-error">${state.error || 'Unknown error'}</div></div>`;
+                showYoutubeStatus('✗ ' + (state.error || 'Download failed'), 'error');
+            }
+        }
+    }, 500);
+}
+
+function showYoutubeStatus(message, type) {
+    const el = document.getElementById('youtubeStatus');
+    el.className = 'status ' + type;
+    el.textContent = message;
+    setTimeout(() => el.textContent = '', 6000);
+}
+
+// ===== YOUTUBE FETCH INFO =====
+async function fetchYoutubeInfo() {
+    const url = document.getElementById('youtubeUrl').value.trim();
+
+    if (!url) {
+        showYoutubeStatus('⚠️ Please enter a YouTube URL first', 'warning');
+        return;
+    }
+
+    const btn = document.getElementById('fetchInfoBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Fetching...';
+
+    try {
+        const response = await fetch('/api/youtube/info?url=' + encodeURIComponent(url));
+        const data = await response.json();
+
+        if (response.ok) {
+            if (data.title) document.getElementById('youtubeTitle').value = data.title;
+            if (data.uploader) document.getElementById('youtubeArtist').value = data.uploader;
+            showYoutubeStatus('✓ Info fetched!', 'success');
+        } else {
+            showYoutubeStatus('✗ ' + (data.error || 'Could not fetch info'), 'error');
+        }
+    } catch (e) {
+        showYoutubeStatus('✗ Error: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🔍 Fetch Info';
+    }
 }
 
 // ===== INITIALIZE =====
