@@ -11,3 +11,5 @@ Data/*.json
 *.mp3
 *.jpg
 *.png
+ffmpeg.exe
+yt-dlp.exe
