@@ -3,6 +3,7 @@ namespace SpotifyDownloader.Scripts.Features.Download
     public class DownloadState
     {
         public bool InProgress { get; set; }
+        public bool IsCancelled { get; set; }
         public string CurrentTrack { get; set; } = "";
         public int Progress { get; set; }
         public int Total { get; set; }
@@ -31,6 +32,7 @@ namespace SpotifyDownloader.Scripts.Features.Download
                 return new DownloadState
                 {
                     InProgress = _state.InProgress,
+                    IsCancelled = _state.IsCancelled,
                     CurrentTrack = _state.CurrentTrack,
                     Progress = _state.Progress,
                     Total = _state.Total,
@@ -48,6 +50,7 @@ namespace SpotifyDownloader.Scripts.Features.Download
                 _state = new DownloadState
                 {
                     InProgress = true,
+                    IsCancelled = false,
                     Total = totalTracks,
                     Completed = 0,
                     Failed = 0,
@@ -97,11 +100,12 @@ namespace SpotifyDownloader.Scripts.Features.Download
             }
         }
     
-        public void FinishDownload()
+        public void FinishDownload(bool cancelled = false)
         {
             lock (_lock)
             {
                 _state.InProgress = false;
+                _state.IsCancelled = cancelled;
                 _state.CurrentTrack = "";
             }
         }

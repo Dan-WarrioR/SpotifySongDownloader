@@ -10,6 +10,7 @@ namespace SpotifyDownloader.Scripts.Data
         public string Artist { get; set; } = "";
         public string FilePath { get; set; } = "";
         public DateTime DownloadedAt { get; set; }
+        public string Source { get; set; } = "spotify";
     }
     
     public class DownloadDatabase
@@ -64,7 +65,7 @@ namespace SpotifyDownloader.Scripts.Data
             }
         }
     
-        public void Add(string trackId, string trackName, string artist, string filePath)
+        public void Add(string trackId, string trackName, string artist, string filePath, string source = "spotify")
         {
             lock (_lock)
             {
@@ -79,7 +80,8 @@ namespace SpotifyDownloader.Scripts.Data
                     Name = trackName,
                     Artist = artist,
                     FilePath = filePath,
-                    DownloadedAt = DateTime.Now
+                    DownloadedAt = DateTime.Now,
+                    Source = source
                 });
                 
                 SaveDatabase();

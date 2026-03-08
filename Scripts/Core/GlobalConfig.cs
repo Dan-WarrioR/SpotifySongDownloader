@@ -12,6 +12,7 @@ namespace SpotifyDownloader.Scripts.Core
         public static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
+            PropertyNameCaseInsensitive = true,
         };
     }
 }
