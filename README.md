@@ -1,194 +1,226 @@
-# 🎵 Spotify Playlist Downloader
+# 🎵 Music Downloader
 
-A clean C# application to download Spotify playlists as MP3 files with album artwork.
+Download Spotify playlists and YouTube videos as high-quality MP3s with embedded metadata and album art — all from a local web UI.
 
-![Platform](https://img.shields.io/badge/Platform-.NET%2010-512BD4?style=for-the-badge&logo=dotnet)
-![Language](https://img.shields.io/badge/Language-C%23-239120?style=for-the-badge&logo=csharp)
+![Platform](https://img.shields.io/badge/.NET_10-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
+![Language](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=csharp&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
 
 ---
 
-## 📋 What It Does
-
-Downloads all tracks from your Spotify playlists as high-quality MP3 files with embedded album artwork. Automatically skips already downloaded tracks.
-
 ## ✨ Features
 
-- 🎵 Download complete playlists
-- 🖼️ Automatic album artwork embedding  
-- ⚡ 3 concurrent downloads for speed
-- 🔄 Smart duplicate detection
-- 📊 Real-time progress tracking
-- 💾 Download history
+| Feature | Details |
+|---|---|
+| 🎵 **Spotify playlists** | Download full playlists by ID — add as many as you want |
+| ▶️ **YouTube URLs** | Paste any YouTube link and download it as MP3 |
+| 🔍 **Auto-fetch metadata** | One click fills in title and artist from YouTube |
+| 🖼️ **Album art** | Embedded automatically into every MP3 (ID3v2.3) |
+| ⚡ **Concurrent downloads** | 3 tracks downloaded in parallel for speed |
+| ✕ **Cancel anytime** | Stop a running batch without killing the app |
+| 🔄 **Smart skip** | Already-downloaded tracks are detected and skipped |
+| 📊 **Live progress** | Real-time progress bar, per-track results, counts |
+| 📂 **Open folder** | Jump straight to your download folder from the UI |
+| 📋 **Download history** | Full log of every track — Spotify and YouTube combined |
 
 ---
 
 ## 🚀 Quick Start
 
-### 1️⃣ Requirements
+### Requirements
 
-Install these first:
+You need these installed and accessible from PATH (or placed next to the executable):
 
-- **[.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)** (or .NET 8+)
-- **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** - For downloading audio
-- **[ffmpeg](https://ffmpeg.org/download.html)** - For audio processing
+- **[yt-dlp](https://github.com/yt-dlp/yt-dlp/releases)** — handles all downloading
+- **[ffmpeg](https://ffmpeg.org/download.html)** — handles audio conversion and metadata embedding
 
-**Windows quick install:**
+**Windows one-liner:**
 ```powershell
-winget install Microsoft.DotNet.SDK.10
-winget install yt-dlp
-winget install ffmpeg
+winget install yt-dlp && winget install ffmpeg
 ```
 
-### 2️⃣ Get Spotify Credentials
-
+For Spotify downloads you also need a free API app:
 1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-2. Create a new app
-3. Copy your **Client ID** and **Client Secret**
+2. Create an app (any name, any redirect URI)
+3. Copy the **Client ID** and **Client Secret**
 
-### 3️⃣ Run the Application
+---
 
-**Option A: Quick Run (Development)**
+### Option A — Run from source (requires .NET 10 SDK)
+
 ```bash
-# Double-click run.bat (Windows) or run.sh (Mac/Linux)
-# OR run this command:
-dotnet run
+# Clone or download the repo, then:
+run.bat
 ```
 
-Your browser will open at `http://localhost:5000`
+Opens `http://localhost:5000` automatically.
 
-**Option B: Build Executable (Recommended)**
+---
+
+### Option B — Portable executable (recommended)
+
+No .NET installation needed on the target machine.
+
 ```bash
-# Build a single executable file
-dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o ./build
-
-# The .exe will be in the ./build folder
-# Just double-click SpotifyDownloader.exe to run!
+# From the project folder, run once:
+publish.bat
 ```
 
-For other platforms:
-- **Linux**: Replace `win-x64` with `linux-x64`
-- **Mac**: Replace `win-x64` with `osx-x64`
+This produces a `dist/` folder. Drop in your `yt-dlp.exe` and `ffmpeg.exe`, then:
+
+```
+dist/
+  SpotifyDownloader.exe    ← self-contained, ~80MB
+  wwwroot/                 ← static assets (required, keep alongside exe)
+  yt-dlp.exe               ← add this
+  ffmpeg.exe               ← add this
+  launch.bat               ← double-click to run
+```
+
+Copy the entire `dist/` folder anywhere — USB drive, another PC, wherever.
 
 ---
 
 ## 📖 How to Use
 
-### Step 1: Configure
-Open the app in your browser and enter:
+### ⚙️ First-time Setup
 
-- **Spotify Client ID** - From your Spotify app
-- **Spotify Client Secret** - From your Spotify app  
-- **Playlist ID** - Get from Spotify playlist URL
-  - Example: `https://open.spotify.com/playlist/37i9dQZF1DX...`
-  - The ID is the part after `playlist/`
-- **Download Folder** - Where to save music
-  - Windows: `C:\Users\YourName\Music\Spotify`
-  - Mac: `/Users/YourName/Music/Spotify`
-  - Linux: `/home/username/Music/Spotify`
-
-💡 **Tip:** Copy folder paths from your file manager's address bar
-
-Click **Save Configuration**
-
-### Step 2: Download
-Click **Start Download** and watch the progress!
-
-The app shows:
-- ✅ Current track being downloaded
-- 📊 Progress percentage
-- 📈 Completed/Failed/Total counts
-- 📝 Real-time results list
+1. Open the **Configuration** tab
+2. Enter your **Spotify Client ID** and **Client Secret**
+3. Add one or more **Playlist IDs** using the `+ Add` button
+   - Get the ID from a Spotify playlist URL: `open.spotify.com/playlist/`**`37i9dQZF1DX...`**
+   - Playlist names load automatically once credentials are saved
+4. Set your **Download Folder** (use the quick buttons or paste a path)
+5. Click **💾 Save Configuration**
 
 ---
 
-## 📁 Project Structure
+### 🎵 Downloading a Spotify Playlist
 
-```
-SpotifyDownloader/
-├── run.bat / run.sh          # Launch scripts
-├── SpotifyDownloader.csproj  # Project file
-├── Data/                     # Config files (auto-created)
-│   ├── config.json          # Your settings
-│   └── downloaded_tracks.json # Download history
-└── Scripts/                  # All C# source code
-    ├── Boot.cs
-    ├── Core/
-    ├── Features/
-    ├── Controllers/
-    └── Data/
-```
+1. Go to the **Dashboard** tab
+2. Click **⬇️ Download All Playlists**
+   - Or click the ⬇️ icon next to a specific playlist to download just that one
+3. Watch the live progress — completed and failed tracks are listed as they finish
+4. Click **✕ Cancel Download** at any time to stop queuing new tracks
+5. Click **📂 Open** to jump to your download folder when done
+
+Already-downloaded tracks are automatically skipped. Run it again after adding songs to a playlist and only the new ones will be fetched.
+
+> **Re-download everything:** Use the *Re-download All Tracks* button at the bottom of the Dashboard to clear history and re-fetch everything from scratch.
 
 ---
 
-## 🛠️ Building an Executable
+### ▶️ Downloading from YouTube
 
-To create a standalone `.exe` that doesn't require `dotnet run`:
+1. Go to the **YouTube** tab
+2. Paste a YouTube URL
+3. Click **🔍 Fetch Info** to auto-fill title and artist from the video
+4. Fill in any additional metadata: album, year, cover art URL (all optional)
+5. Optionally set a custom download folder for this track
+6. Click **▶️ Download from YouTube**
 
-### Windows
-```bash
-dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o ./build
-```
+The downloaded file is added to your download history alongside Spotify tracks.
 
-### Linux
-```bash
-dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -o ./build
-```
+---
 
-### Mac
-```bash
-dotnet publish -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -o ./build
-```
+## 🗂️ Data & Settings
 
-The executable will be in the `build` folder. Just copy it anywhere and double-click to run!
+All persistent data lives in a `Data/` folder next to the executable:
+
+| File | Contents |
+|---|---|
+| `Data/config.json` | Spotify credentials, playlist IDs, download folder, naming pattern |
+| `Data/downloaded_tracks.json` | Full history — track name, artist, file path, source, timestamp |
+
+These files are created automatically on first run. Back them up if you want to preserve history when moving the app.
 
 ---
 
 ## ❓ Troubleshooting
 
-### "Application won't start"
-- Check .NET is installed: `dotnet --version`
-- Should show 10.0.x or 8.0.x+
-- Make sure you have the **x64** version
+<details>
+<summary><b>App won't start / port in use</b></summary>
 
-### "Port already in use"
-- Another app is using port 5000
-- Change the port in `Scripts/Core/Application.cs`
+Port 5000 is taken by another process. Change the port in `Scripts/Core/Application.cs`:
+```csharp
+_app.Run("http://localhost:5001");  // pick any free port
+```
+Then rebuild.
+</details>
 
-### "Downloads fail"
-- Verify yt-dlp and ffmpeg are installed
-- Check Spotify credentials are correct
-- Ensure playlist ID is valid
-- Check internet connection
+<details>
+<summary><b>Downloads fail immediately</b></summary>
 
-### "Can't find folder path"
-**Windows:** Open folder → Click address bar → Copy path  
-**Mac:** Right-click folder → Hold Option → "Copy as Pathname"  
-**Linux:** Path shown in file manager address bar
+- Run `yt-dlp --version` and `ffmpeg -version` in a terminal to confirm they're reachable
+- If using the portable exe, make sure `yt-dlp.exe` and `ffmpeg.exe` are in the same folder as `SpotifyDownloader.exe`
+- The Dashboard shows a green/red status indicator for both tools
+</details>
+
+<details>
+<summary><b>Spotify authentication fails</b></summary>
+
+- Double-check Client ID and Client Secret in the Configuration tab
+- Make sure you saved the config after entering credentials
+- Credentials are stored in `Data/config.json` — you can inspect it directly
+</details>
+
+<details>
+<summary><b>YouTube info fetch returns nothing</b></summary>
+
+- The URL must be a direct video link, not a playlist or channel page
+- Private or age-restricted videos cannot be fetched
+- Update yt-dlp: `yt-dlp -U`
+</details>
+
+<details>
+<summary><b>Album art not embedded</b></summary>
+
+- ffmpeg is required for art embedding — confirm it's installed
+- The art URL must be publicly accessible (Spotify CDN URLs work fine)
+- Re-downloading with *Clear History & Re-download All* will re-embed art
+</details>
 
 ---
 
-## 💡 Tips
+## 🏗️ Project Structure
 
-- Create a dedicated music folder before configuring
-- Downloaded tracks are saved as `TrackName.mp3`
-- Album art is automatically embedded
-- Run multiple times to get new tracks from the same playlist
-- Check `Data/downloaded_tracks.json` to see what you've downloaded
+```
+SpotifyDownloader/
+├── run.bat / run.sh              # Launch scripts (requires .NET SDK)
+├── publish.bat                   # Build portable self-contained exe
+├── SpotifyDownloader.csproj
+├── Data/                         # Created at runtime
+│   ├── config.json
+│   └── downloaded_tracks.json
+├── Pages/
+│   └── Index.cshtml              # Single-page UI
+├── wwwroot/
+│   ├── css/site.css
+│   └── js/site.js
+└── Scripts/
+    ├── Core/                     # Shared utilities (FileHelper, MediaEmbedder, ToolPaths…)
+    ├── Controllers/              # API endpoints
+    ├── Data/                     # DownloadDatabase
+    └── Features/
+        ├── Config/               # Configuration management
+        ├── Download/             # Spotify download pipeline
+        ├── Spotify/              # Spotify API client
+        └── YouTube/              # YouTube download pipeline
+```
+
+---
+
+## 🔧 Dependencies
+
+| Tool | Purpose |
+|---|---|
+| [yt-dlp](https://github.com/yt-dlp/yt-dlp) | Downloads audio from YouTube and other sites |
+| [ffmpeg](https://ffmpeg.org/) | Converts to MP3, embeds metadata and album art |
+| [Spotify Web API](https://developer.spotify.com/) | Fetches track lists and metadata from playlists |
+| ASP.NET Core 10 | Web server and API |
 
 ---
 
 ## 📄 License
 
-MIT License - Free to use and modify
-
----
-
-## 🙏 Credits
-
-- [yt-dlp](https://github.com/yt-dlp/yt-dlp) - Download functionality
-- [ffmpeg](https://ffmpeg.org/) - Audio processing
-- [Spotify Web API](https://developer.spotify.com/) - Playlist data
-
----
-
-**Made with ❤️ using C# and ASP.NET Core**
+MIT — free to use, modify, and distribute.
