@@ -107,7 +107,11 @@ namespace SpotifyDownloader.Scripts.Features.Download
                         CreateNoWindow = true
                     };
 
-                    startInfo.ArgumentList.Add($"ytsearch1:{track.Artist} {track.Name}");
+                    startInfo.ArgumentList.Add($"ytsearch5:{track.Artist} {track.Name}");
+                    startInfo.ArgumentList.Add("--match-filter");
+                    startInfo.ArgumentList.Add("title!~='(?i)(live|concert|tour|session|karaoke|at the |at a )'");
+                    startInfo.ArgumentList.Add("--max-downloads");
+                    startInfo.ArgumentList.Add("1");
                     startInfo.ArgumentList.Add("--ffmpeg-location");
                     startInfo.ArgumentList.Add(_toolPaths.Ffmpeg);
                     startInfo.ArgumentList.Add("--format");
