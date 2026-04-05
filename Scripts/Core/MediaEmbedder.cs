@@ -5,6 +5,7 @@ namespace SpotifyDownloader.Scripts.Core
     public static class MediaEmbedder
     {
         private const int EmbedTimeoutSeconds = 30;
+        private static readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
 
         /// <summary>
         /// Embeds metadata and/or album art into an MP3 file in-place.
@@ -36,8 +37,7 @@ namespace SpotifyDownloader.Scripts.Core
 
                     try
                     {
-                        using HttpClient httpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
-                        byte[] imageData = await httpClient.GetByteArrayAsync(artUrl);
+                        byte[] imageData = await _httpClient.GetByteArrayAsync(artUrl);
                         await File.WriteAllBytesAsync(artworkPath, imageData);
                         hasArt = true;
                         Console.WriteLine($"Album art downloaded: {artworkPath} ({imageData.Length} bytes)");
