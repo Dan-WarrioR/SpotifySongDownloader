@@ -82,7 +82,10 @@ namespace SpotifyDownloader.Scripts.Controllers
                 return NotFound(new { error = "No tracks found or failed to fetch playlists — check playlist IDs and auth settings" });
             }
 
-            var newTracks = allTracks.Where(t => !_database.IsDownloaded(t.VideoId)).ToList();
+            var newTracks = allTracks
+                .Where(t => !_database.IsDownloaded(t.VideoId) &&
+                            !_database.IsDownloadedByTitleAndArtist(t.Title, t.Artist))
+                .ToList();
 
             if (newTracks.Count == 0)
             {

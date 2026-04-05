@@ -64,6 +64,37 @@ namespace SpotifyDownloader.Scripts.Data
                 return _tracks.Any(t => t.TrackId == trackId);
             }
         }
+
+        public bool IsDownloadedByTitleAndArtist(string name, string artist)
+        {
+            string normalizedName = NormalizeTitle(name);
+            string normalizedArtist = NormalizeArtist(artist);
+
+            lock (_lock)
+            {
+                return _tracks.Any(t =>
+                    NormalizeTitle(t.Name) == normalizedName &&
+                    NormalizeArtist(t.Artist) == normalizedArtist);
+            }
+        }
+
+        private static string NormalizeTitle(string value)
+        {
+            return value.Trim().ToLowerInvariant();
+        }
+
+        private static string NormalizeArtist(string value)
+        {
+            string normalized = value.Trim().ToLowerInvariant();
+
+            // YouTube Music auto-generated channels append " - topic" — strip it
+            if (normalized.EndsWith(" - topic"))
+            {
+                normalized = normalized[..^" - topic".Length].TrimEnd();
+            }
+
+            return normalized;
+        }
     
         public void Add(string trackId, string trackName, string artist, string filePath, string source = "spotify")
         {
