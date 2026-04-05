@@ -147,15 +147,24 @@ document.getElementById('downloadBtn').addEventListener('click', async () => {
 
 let pollingInterval;
 
+function escapeHtml(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function startProgressPolling() {
     pollingInterval = setInterval(async () => {
-        const response = await fetch('/api/download/progress');
-        const state = await response.json();
-        updateProgress(state);
-        if (!state.in_progress && state.total > 0) {
+        try {
+            const response = await fetch('/api/download/progress');
+            const state = await response.json();
+            updateProgress(state);
+            if (!state.in_progress && state.total > 0) {
+                clearInterval(pollingInterval);
+                if (state.is_cancelled) showStatus('⏹ Download cancelled', 'warning');
+                await loadStats();
+            }
+        } catch (e) {
             clearInterval(pollingInterval);
-            if (state.is_cancelled) showStatus('⏹ Download cancelled', 'warning');
-            await loadStats();
+            showStatus('✗ Lost connection to server', 'error');
         }
     }, 500);
 }
@@ -173,9 +182,9 @@ function updateProgress(state) {
 
     document.getElementById('resultsList').innerHTML = state.results.map(r => `
         <div class="result-item ${r.success ? 'success' : 'error'}">
-            <div class="result-track">${r.track}</div>
-            <div class="result-artist">${r.artist}</div>
-            ${r.error ? `<div class="result-error">${r.error}</div>` : ''}
+            <div class="result-track">${escapeHtml(r.track)}</div>
+            <div class="result-artist">${escapeHtml(r.artist)}</div>
+            ${r.error ? `<div class="result-error">${escapeHtml(r.error)}</div>` : ''}
         </div>
     `).reverse().join('');
 }

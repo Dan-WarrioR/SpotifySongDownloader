@@ -106,7 +106,7 @@ function renderPlaylistList() {
                 <div><div class="playlist-id">${id}</div></div>
             </div>
             <div class="playlist-actions">
-                <button type="button" class="btn-icon btn-danger-icon" onclick="removePlaylist('${id}')" title="Remove">✕</button>
+                <button type="button" class="btn-icon btn-danger-icon" data-id="${id}" data-list="spotify" title="Remove">✕</button>
             </div>
         </div>
     `).join('');
@@ -182,7 +182,7 @@ function renderYtmPlaylistList() {
                 <div><div class="playlist-id">${id}</div></div>
             </div>
             <div class="playlist-actions">
-                <button type="button" class="btn-icon btn-danger-icon" onclick="removeYtmPlaylist('${id}')" title="Remove">✕</button>
+                <button type="button" class="btn-icon btn-danger-icon" data-id="${id}" data-list="ytm" title="Remove">✕</button>
             </div>
         </div>
     `).join('');
@@ -216,5 +216,14 @@ function setDefaultDownloadsFolder() {
         : '/home/' + (localStorage.getItem('username') || 'user') + '/Downloads/SpotifyDownloads';
     document.getElementById('downloadFolder').value = path;
 }
+
+// ===== PLAYLIST REMOVE (event delegation) =====
+document.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-id]');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    if (btn.dataset.list === 'spotify') removePlaylist(id);
+    else if (btn.dataset.list === 'ytm') removeYtmPlaylist(id);
+});
 
 init();
