@@ -31,6 +31,7 @@ namespace SpotifyDownloader.Scripts.Features.Spotify
 
             if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret))
             {
+                Console.WriteLine("[Spotify] Cannot authenticate — Client ID or Client Secret is not configured");
                 return null;
             }
 
@@ -49,6 +50,8 @@ namespace SpotifyDownloader.Scripts.Features.Spotify
 
                 if (!response.IsSuccessStatusCode)
                 {
+                    string body = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[Spotify] Token request failed — HTTP {(int)response.StatusCode}: {body}");
                     return null;
                 }
 
@@ -56,8 +59,9 @@ namespace SpotifyDownloader.Scripts.Features.Spotify
                 using JsonDocument doc = JsonDocument.Parse(jsonResponse);
                 return doc.RootElement.GetProperty("access_token").GetString();
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"[Spotify] Token request exception: {ex.Message}");
                 return null;
             }
         }
@@ -83,6 +87,8 @@ namespace SpotifyDownloader.Scripts.Features.Spotify
 
                     if (!response.IsSuccessStatusCode)
                     {
+                        string errorBody = await response.Content.ReadAsStringAsync();
+                        Console.WriteLine($"[Spotify] Tracks request failed for playlist '{playlistId}' — HTTP {(int)response.StatusCode}: {errorBody}");
                         break;
                     }
 
@@ -128,8 +134,9 @@ namespace SpotifyDownloader.Scripts.Features.Spotify
                         ? next.GetString()
                         : null;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Console.WriteLine($"[Spotify] Exception fetching tracks for playlist '{playlistId}': {ex.Message}");
                     break;
                 }
             }
