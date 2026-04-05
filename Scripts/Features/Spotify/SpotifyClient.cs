@@ -10,6 +10,8 @@ namespace SpotifyDownloader.Scripts.Features.Spotify
         public string Id { get; set; } = "";
         public string Name { get; set; } = "";
         public string Artist { get; set; } = "";
+        public string? AlbumName { get; set; }
+        public string? Year { get; set; }
         public string? AlbumArtUrl { get; set; }
     }
 
@@ -108,8 +110,24 @@ namespace SpotifyDownloader.Scripts.Features.Spotify
                             string artistName = artists.EnumerateArray().FirstOrDefault().GetProperty("name").GetString() ?? "";
 
                             string? albumArtUrl = null;
+                            string? albumName = null;
+                            string? year = null;
+
                             if (track.TryGetProperty("album", out JsonElement album))
                             {
+                                albumName = album.TryGetProperty("name", out JsonElement albumNameEl)
+                                    ? albumNameEl.GetString()
+                                    : null;
+
+                                if (album.TryGetProperty("release_date", out JsonElement releaseDateEl))
+                                {
+                                    string? releaseDate = releaseDateEl.GetString();
+                                    if (!string.IsNullOrEmpty(releaseDate))
+                                    {
+                                        year = releaseDate[..Math.Min(4, releaseDate.Length)];
+                                    }
+                                }
+
                                 if (album.TryGetProperty("images", out JsonElement images))
                                 {
                                     JsonElement firstImage = images.EnumerateArray().FirstOrDefault();
@@ -125,6 +143,8 @@ namespace SpotifyDownloader.Scripts.Features.Spotify
                                 Id = trackId,
                                 Name = trackName,
                                 Artist = artistName,
+                                AlbumName = albumName,
+                                Year = year,
                                 AlbumArtUrl = albumArtUrl
                             });
                         }

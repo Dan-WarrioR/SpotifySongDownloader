@@ -40,7 +40,7 @@ namespace SpotifyDownloader.Scripts.Features.Download
 
             _stateManager.StartDownload(tracks.Count);
 
-            SemaphoreSlim semaphore = new(MaxConcurrentDownloads);
+            using SemaphoreSlim semaphore = new(MaxConcurrentDownloads);
             List<Task> tasks = [];
 
             foreach (var track in tracks)
@@ -139,7 +139,20 @@ namespace SpotifyDownloader.Scripts.Features.Download
                     process.StartInfo = startInfo;
                     process.Start();
 
-                    await process.WaitForExitAsync(TimeSpan.FromSeconds(DownloadTimeoutSeconds));
+                    bool completed = await process.WaitForExitAsync(TimeSpan.FromSeconds(DownloadTimeoutSeconds));
+
+                    if (!completed)
+                    {
+                        process.Kill(entireProcessTree: true);
+
+                        if (attempt < MaxRetries)
+                        {
+                            continue;
+                        }
+
+                        _stateManager.AddFailure(track.Name, track.Artist, "Download timed out");
+                        return;
+                    }
 
                     string expectedFile = Path.Combine(downloadFolder, $"{safeName}.mp3");
 
@@ -154,7 +167,7 @@ namespace SpotifyDownloader.Scripts.Features.Download
                         {
                             bool artEmbedded = await MediaEmbedder.EmbedMetadataAndArtAsync(
                                 finalPath, _toolPaths.Ffmpeg, downloadFolder,
-                                null, null, null, null,
+                                track.Name, track.Artist, track.AlbumName, track.Year,
                                 track.AlbumArtUrl,
                                 _configManager.NormalizeVolume);
 
