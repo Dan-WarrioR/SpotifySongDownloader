@@ -29,6 +29,12 @@ namespace SpotifyDownloader.Scripts.Features.Config
 
         [JsonPropertyName("auto_sync")]
         public bool AutoSync { get; set; } = false;
+
+        [JsonPropertyName("ytm_playlist_ids")]
+        public List<string> YtmPlaylistIds { get; set; } = new();
+
+        [JsonPropertyName("ytm_cookies_browser")]
+        public string YtmCookiesBrowser { get; set; } = "";
     }
 
     public class ConfigManager
@@ -42,6 +48,8 @@ namespace SpotifyDownloader.Scripts.Features.Config
         public bool NormalizeVolume => Config.NormalizeVolume;
         public bool SponsorBlock => Config.SponsorBlock;
         public bool AutoSync => Config.AutoSync;
+        public List<string> YtmPlaylistIds => Config.YtmPlaylistIds;
+        public string YtmCookiesBrowser => Config.YtmCookiesBrowser;
 
         private readonly string _configPath;
 

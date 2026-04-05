@@ -64,10 +64,26 @@ namespace SpotifyDownloader.Scripts.Core
                 {
                     startInfo.ArgumentList.Add("-i");
                     startInfo.ArgumentList.Add(artworkPath);
+
+                    string filterComplex = normalizeVolume
+                        ? "[0:a]loudnorm=I=-16:LRA=11:TP=-1.5[aout];[1:v]crop=in_h:in_h[vout]"
+                        : "[1:v]crop=in_h:in_h[vout]";
+
+                    startInfo.ArgumentList.Add("-filter_complex");
+                    startInfo.ArgumentList.Add(filterComplex);
                     startInfo.ArgumentList.Add("-map");
-                    startInfo.ArgumentList.Add("0:a");
+                    startInfo.ArgumentList.Add(normalizeVolume ? "[aout]" : "0:a");
                     startInfo.ArgumentList.Add("-map");
-                    startInfo.ArgumentList.Add("1:0");
+                    startInfo.ArgumentList.Add("[vout]");
+                    startInfo.ArgumentList.Add("-c:a");
+                    startInfo.ArgumentList.Add(normalizeVolume ? "libmp3lame" : "copy");
+
+                    if (normalizeVolume)
+                    {
+                        startInfo.ArgumentList.Add("-q:a");
+                        startInfo.ArgumentList.Add("0");
+                    }
+
                     startInfo.ArgumentList.Add("-c:v");
                     startInfo.ArgumentList.Add("mjpeg");
                     startInfo.ArgumentList.Add("-disposition:v");
@@ -81,21 +97,21 @@ namespace SpotifyDownloader.Scripts.Core
                 {
                     startInfo.ArgumentList.Add("-map");
                     startInfo.ArgumentList.Add("0:a");
-                }
 
-                if (normalizeVolume)
-                {
-                    startInfo.ArgumentList.Add("-c:a");
-                    startInfo.ArgumentList.Add("libmp3lame");
-                    startInfo.ArgumentList.Add("-q:a");
-                    startInfo.ArgumentList.Add("0");
-                    startInfo.ArgumentList.Add("-af");
-                    startInfo.ArgumentList.Add("loudnorm=I=-16:LRA=11:TP=-1.5");
-                }
-                else
-                {
-                    startInfo.ArgumentList.Add("-c:a");
-                    startInfo.ArgumentList.Add("copy");
+                    if (normalizeVolume)
+                    {
+                        startInfo.ArgumentList.Add("-c:a");
+                        startInfo.ArgumentList.Add("libmp3lame");
+                        startInfo.ArgumentList.Add("-q:a");
+                        startInfo.ArgumentList.Add("0");
+                        startInfo.ArgumentList.Add("-af");
+                        startInfo.ArgumentList.Add("loudnorm=I=-16:LRA=11:TP=-1.5");
+                    }
+                    else
+                    {
+                        startInfo.ArgumentList.Add("-c:a");
+                        startInfo.ArgumentList.Add("copy");
+                    }
                 }
 
                 if (!string.IsNullOrWhiteSpace(title))

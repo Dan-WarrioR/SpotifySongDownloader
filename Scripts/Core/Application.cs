@@ -4,6 +4,7 @@ using SpotifyDownloader.Scripts.Features.Config;
 using SpotifyDownloader.Scripts.Features.Download;
 using SpotifyDownloader.Scripts.Features.Spotify;
 using SpotifyDownloader.Scripts.Features.YouTube;
+using SpotifyDownloader.Scripts.Features.YouTubeMusic;
 
 namespace SpotifyDownloader.Scripts.Core
 {
@@ -66,6 +67,9 @@ namespace SpotifyDownloader.Scripts.Core
             builder.Services.AddSingleton<DownloadStateManager>();
             builder.Services.AddSingleton<YoutubeStateManager>();
             builder.Services.AddSingleton<YoutubeDownloadService>();
+            builder.Services.AddSingleton<YoutubeMusicClient>();
+            builder.Services.AddSingleton<YtmDownloadStateManager>();
+            builder.Services.AddSingleton<YoutubeMusicDownloadService>();
 
             builder.Services.AddCors(options =>
             {

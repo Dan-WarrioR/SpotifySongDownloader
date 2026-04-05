@@ -1,6 +1,7 @@
 // Global state
 let currentConfig = {};
 let playlists = [];
+let ytmPlaylists = [];
 
 // ===== TAB SWITCHING =====
 function switchTab(tabName, event) {
@@ -27,6 +28,10 @@ async function loadConfig() {
     playlists = currentConfig.playlist_ids || [];
     renderPlaylistList();
 
+    ytmPlaylists = currentConfig.ytm_playlist_ids || [];
+    renderYtmPlaylistList();
+    document.getElementById('ytmCookiesBrowser').value = currentConfig.ytm_cookies_browser || '';
+
     updateDisplayValue('displayClientId', currentConfig.client_id);
     updateDisplayValue('displayClientSecret', currentConfig.client_secret);
     updateDisplayValue('displayDownloadFolder', currentConfig.download_folder);
@@ -34,6 +39,7 @@ async function loadConfig() {
 
     updateDisplayValue('infoDownloadFolder', currentConfig.download_folder);
     updatePlaylistDisplay();
+    updateYtmPlaylistDisplay();
     updateFileNamePreview();
     updateDownloadButton();
 }
@@ -186,6 +192,139 @@ async function downloadSinglePlaylist(playlistId) {
     }
 }
 
+// ===== YOUTUBE MUSIC PLAYLIST MANAGEMENT =====
+function showYtmConfigStatus(message, type) {
+    const el = document.getElementById('ytmConfigStatus');
+    el.className = 'status ' + type;
+    el.textContent = message;
+    setTimeout(() => { el.textContent = ''; el.className = ''; }, 4000);
+}
+
+function addYtmPlaylist() {
+    const input = document.getElementById('newYtmPlaylistId');
+    const playlistId = input.value.trim();
+
+    if (!playlistId) {
+        showYtmConfigStatus('⚠️ Please enter a playlist ID', 'warning');
+        return;
+    }
+
+    if (ytmPlaylists.includes(playlistId)) {
+        showYtmConfigStatus('⚠️ Playlist already added', 'warning');
+        return;
+    }
+
+    ytmPlaylists.push(playlistId);
+    input.value = '';
+    renderYtmPlaylistList();
+    updateYtmPlaylistDisplay();
+    showYtmConfigStatus('✓ Playlist added — remember to save', 'success');
+}
+
+function removeYtmPlaylist(playlistId) {
+    ytmPlaylists = ytmPlaylists.filter(id => id !== playlistId);
+    renderYtmPlaylistList();
+    updateYtmPlaylistDisplay();
+}
+
+function renderYtmPlaylistList() {
+    const container = document.getElementById('ytmPlaylistList');
+
+    if (ytmPlaylists.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">No playlists added yet</div>';
+        return;
+    }
+
+    container.innerHTML = ytmPlaylists.map((id, index) => `
+        <div class="playlist-item" data-ytm-playlist-id="${id}">
+            <div class="playlist-info">
+                <div class="playlist-number">${index + 1}</div>
+                <div>
+                    <div class="playlist-id">${id}</div>
+                </div>
+            </div>
+            <div class="playlist-actions">
+                <button type="button" class="btn-icon" onclick="downloadSingleYtmPlaylist('${id}')" title="Download this playlist only">
+                    ⬇️
+                </button>
+                <button type="button" class="btn-icon btn-danger-icon" onclick="removeYtmPlaylist('${id}')" title="Remove">
+                    ✕
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateYtmPlaylistDisplay() {
+    const countEl = document.getElementById('ytmInfoPlaylistCount');
+    const listEl = document.getElementById('ytmInfoPlaylistList');
+
+    if (ytmPlaylists.length === 0) {
+        countEl.textContent = '0';
+        countEl.classList.add('empty');
+        listEl.textContent = '';
+    } else {
+        countEl.textContent = ytmPlaylists.length;
+        countEl.classList.remove('empty');
+        listEl.textContent = ytmPlaylists.slice(0, 2).join(', ') + (ytmPlaylists.length > 2 ? ', ...' : '');
+    }
+
+    const authEl = document.getElementById('ytmInfoAuth');
+    const browser = currentConfig.ytm_cookies_browser || '';
+    authEl.textContent = browser ? browser.charAt(0).toUpperCase() + browser.slice(1) + ' cookies' : 'None (public)';
+    authEl.classList.toggle('empty', !browser);
+
+    const folderEl = document.getElementById('ytmInfoDownloadFolder');
+    const folder = currentConfig.download_folder || '';
+    if (folder) {
+        folderEl.textContent = folder;
+        folderEl.classList.remove('empty');
+    } else {
+        folderEl.textContent = 'Not configured';
+        folderEl.classList.add('empty');
+    }
+
+    updateYtmDownloadButton();
+}
+
+function updateYtmDownloadButton() {
+    const btn = document.getElementById('ytmDownloadBtn');
+    const isConfigured = ytmPlaylists.length > 0 && currentConfig.download_folder;
+    btn.disabled = !isConfigured;
+
+    if (!isConfigured) {
+        btn.innerHTML = '<span>⚙️ Configure Settings First</span>';
+    } else {
+        btn.innerHTML = '<span>⬇️ Download All Playlists (' + ytmPlaylists.length + ')</span>';
+    }
+}
+
+async function downloadSingleYtmPlaylist(playlistId) {
+    if (document.getElementById('ytmDownloadBtn').disabled) {
+        showYtmStatus('⚙️ Please configure settings first', 'warning');
+        return;
+    }
+
+    const response = await fetch('/api/ytmusic/download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ PlaylistId: playlistId })
+    });
+    const data = await response.json();
+
+    if (response.ok) {
+        if (data.new === 0) {
+            showYtmStatus('ℹ️ ' + data.message, 'warning');
+        } else {
+            showYtmStatus('✓ ' + data.message, 'success');
+            document.getElementById('ytmProgressSection').classList.add('active');
+            startYtmProgressPolling();
+        }
+    } else {
+        showYtmStatus('✗ ' + data.error, 'error');
+    }
+}
+
 // ===== FILE NAMING =====
 function updateFileNamePreview() {
     const pattern = document.getElementById('fileNamePattern').value;
@@ -264,7 +403,9 @@ document.getElementById('configForm').addEventListener('submit', async (e) => {
         file_name_pattern: document.getElementById('fileNamePattern').value,
         sponsorblock: document.getElementById('sponsorblock').checked,
         normalize_volume: document.getElementById('normalizeVolume').checked,
-        auto_sync: document.getElementById('autoSync').checked
+        auto_sync: document.getElementById('autoSync').checked,
+        ytm_playlist_ids: ytmPlaylists,
+        ytm_cookies_browser: document.getElementById('ytmCookiesBrowser').value
     };
 
     await fetch('/api/config', {
@@ -277,6 +418,26 @@ document.getElementById('configForm').addEventListener('submit', async (e) => {
     await loadConfig();
     await loadStats();
 });
+
+async function saveYtmConfig() {
+    const config = {
+        ...currentConfig,
+        ytm_playlist_ids: ytmPlaylists,
+        ytm_cookies_browser: document.getElementById('ytmCookiesBrowser').value
+    };
+
+    try {
+        await fetch('/api/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(config)
+        });
+        showYtmConfigStatus('✓ YouTube Music config saved!', 'success');
+        await loadConfig();
+    } catch (e) {
+        showYtmConfigStatus('✗ Save failed: ' + e.message, 'error');
+    }
+}
 
 // ===== SPOTIFY DOWNLOAD =====
 document.getElementById('downloadBtn').addEventListener('click', async () => {
@@ -297,6 +458,84 @@ document.getElementById('downloadBtn').addEventListener('click', async () => {
         showStatus('✗ ' + (data.error || 'Unknown error'), 'error');
     }
 });
+
+// ===== YOUTUBE MUSIC DOWNLOAD =====
+document.getElementById('ytmDownloadBtn').addEventListener('click', async () => {
+    if (document.getElementById('ytmDownloadBtn').disabled) return;
+
+    const response = await fetch('/api/ytmusic/download', { method: 'POST' });
+    const data = await response.json();
+
+    if (response.ok) {
+        if (data.new === 0) {
+            showYtmStatus('ℹ️ ' + data.message, 'warning');
+        } else {
+            showYtmStatus('✓ ' + data.message, 'success');
+            document.getElementById('ytmProgressSection').classList.add('active');
+            startYtmProgressPolling();
+        }
+    } else {
+        showYtmStatus('✗ ' + (data.error || 'Unknown error'), 'error');
+    }
+});
+
+let ytmPollingInterval;
+
+function startYtmProgressPolling() {
+    ytmPollingInterval = setInterval(async () => {
+        const response = await fetch('/api/ytmusic/progress');
+        const state = await response.json();
+
+        updateYtmProgress(state);
+
+        if (!state.in_progress && state.total > 0) {
+            clearInterval(ytmPollingInterval);
+            if (state.is_cancelled) {
+                showYtmStatus('⏹ Download cancelled', 'warning');
+            }
+            await loadStats();
+        }
+    }, 500);
+}
+
+function updateYtmProgress(state) {
+    document.getElementById('ytmCurrentTrack').textContent = state.current_track || '';
+    document.getElementById('ytmProgressText').textContent = state.progress + '%';
+    document.getElementById('ytmProgressBar').style.width = state.progress + '%';
+    document.getElementById('ytmCompletedCount').textContent = state.completed;
+    document.getElementById('ytmFailedCount').textContent = state.failed;
+    document.getElementById('ytmTotalCount').textContent = state.total;
+
+    const cancelBtn = document.getElementById('ytmCancelBtn');
+    if (cancelBtn) {
+        cancelBtn.style.display = state.in_progress ? 'block' : 'none';
+    }
+
+    const resultsList = document.getElementById('ytmResultsList');
+    resultsList.innerHTML = state.results.map(r => `
+        <div class="result-item ${r.success ? 'success' : 'error'}">
+            <div class="result-track">${r.track}</div>
+            <div class="result-artist">${r.artist}</div>
+            ${r.error ? `<div class="result-error">${r.error}</div>` : ''}
+        </div>
+    `).reverse().join('');
+}
+
+async function cancelYtmDownload() {
+    try {
+        await fetch('/api/ytmusic/download/cancel', { method: 'POST' });
+        showYtmStatus('⏹ Cancelling download...', 'warning');
+    } catch (e) {
+        showYtmStatus('✗ Error: ' + e.message, 'error');
+    }
+}
+
+function showYtmStatus(message, type) {
+    const el = document.getElementById('ytmStatusMessage');
+    el.className = 'status ' + type;
+    el.textContent = message;
+    setTimeout(() => el.textContent = '', 5000);
+}
 
 // ===== CLEAR HISTORY =====
 document.getElementById('clearHistoryBtn').addEventListener('click', async () => {
@@ -535,6 +774,27 @@ async function updateYtDlp() {
         btn.textContent = '⬆️ Update';
     }
 }
+
+// ===== YOUTUBE MUSIC CLEAR HISTORY =====
+document.getElementById('ytmClearHistoryBtn').addEventListener('click', async () => {
+    if (!confirm('⚠️ This will clear all download history (Spotify + YouTube Music) and allow re-downloading all tracks.\n\nAre you sure you want to continue?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/clear-history', { method: 'POST' });
+        const data = await response.json();
+
+        if (response.ok) {
+            showYtmStatus('✓ Download history cleared! You can now re-download all tracks.', 'success');
+            await loadStats();
+        } else {
+            showYtmStatus('✗ Failed to clear history: ' + data.error, 'error');
+        }
+    } catch (e) {
+        showYtmStatus('✗ Error: ' + e.message, 'error');
+    }
+});
 
 // ===== INITIALIZE =====
 loadConfig();
