@@ -62,6 +62,7 @@ namespace SpotifyDownloader.Scripts.Controllers
 
                 if (!completed)
                 {
+                    process.Kill(entireProcessTree: true);
                     return BadRequest(new { error = "Timed out fetching video info" });
                 }
 

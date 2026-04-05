@@ -43,7 +43,7 @@ namespace SpotifyDownloader.Scripts.Features.YouTubeMusic
 
             _stateManager.StartDownload(tracks.Count);
 
-            SemaphoreSlim semaphore = new(MaxConcurrentDownloads);
+            using SemaphoreSlim semaphore = new(MaxConcurrentDownloads);
             List<Task> tasks = [];
 
             foreach (var track in tracks)
@@ -144,7 +144,20 @@ namespace SpotifyDownloader.Scripts.Features.YouTubeMusic
                     process.StartInfo = startInfo;
                     process.Start();
 
-                    await process.WaitForExitAsync(TimeSpan.FromSeconds(DownloadTimeoutSeconds));
+                    bool completed = await process.WaitForExitAsync(TimeSpan.FromSeconds(DownloadTimeoutSeconds));
+
+                    if (!completed)
+                    {
+                        process.Kill(entireProcessTree: true);
+
+                        if (attempt < MaxRetries)
+                        {
+                            continue;
+                        }
+
+                        _stateManager.AddFailure(track.Title, track.Artist, "Download timed out");
+                        return;
+                    }
 
                     string expectedFile = Path.Combine(downloadFolder, $"{safeName}.mp3");
 
