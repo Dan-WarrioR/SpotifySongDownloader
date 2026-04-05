@@ -1,0 +1,138 @@
+@page
+@model SpotifyDownloader.Pages.SettingsModel
+@{
+    ViewData["Title"] = "Settings";
+}
+
+<div class="container">
+    <div class="card">
+        <h2 class="card-title">Spotify Configuration</h2>
+
+        <div id="spotifyConfigStatus"></div>
+
+        <form id="configForm">
+            <div class="form-group">
+                <label for="clientId">Spotify Client ID</label>
+                <input type="text" id="clientId" placeholder="Enter your Spotify Client ID">
+                <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+                    Get this from <a href="https://developer.spotify.com/dashboard" target="_blank" style="color: var(--accent);">Spotify Developer Dashboard</a>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="clientSecret">Spotify Client Secret</label>
+                <input type="text" id="clientSecret" placeholder="Enter your Spotify Client Secret">
+            </div>
+
+            <div class="form-group">
+                <label for="newPlaylistId">Spotify Playlists</label>
+                <div class="playlist-input-group">
+                    <input type="text" id="newPlaylistId" placeholder="Enter playlist ID (e.g., 37i9dQZF1DXcBWIGoYBM5M)" onkeydown="if(event.key==='Enter'){event.preventDefault();addPlaylist();}">
+                    <button type="button" class="btn-secondary" onclick="addPlaylist()">+ Add</button>
+                </div>
+                <div class="playlist-list" id="playlistList">
+                    <div style="text-align: center; color: var(--text-secondary); padding: 20px;">No playlists added yet</div>
+                </div>
+                <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+                    💡 You can add multiple playlists. They'll all be downloaded together.
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="fileNamePattern">File Naming Pattern</label>
+                <select id="fileNamePattern" onchange="updateFileNamePreview()">
+                    <option value="track">Track Name</option>
+                    <option value="artist-track">Artist - Track Name</option>
+                    <option value="track-artist">Track Name - Artist</option>
+                    <option value="artist-album-track">Artist - Album - Track Name</option>
+                </select>
+                <div class="file-name-preview" id="fileNamePreview">Example: Song Name.mp3</div>
+            </div>
+
+            <div class="form-group">
+                <label for="downloadFolder">Download Folder</label>
+                <div class="input-group">
+                    <input type="text" id="downloadFolder" placeholder="Path to download folder">
+                    <button type="button" class="btn-secondary" onclick="setDefaultMusicFolder()">🎵 Music</button>
+                    <button type="button" class="btn-secondary" onclick="setDefaultDownloadsFolder()">📥 Downloads</button>
+                </div>
+                <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-secondary); font-style: italic;">
+                    Quick buttons will set common default paths for your OS
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Download Behaviour</label>
+                <div class="toggle-group">
+                    <label class="toggle-item">
+                        <input type="checkbox" id="sponsorblock">
+                        <div class="toggle-info">
+                            <span class="toggle-name">⏭️ SponsorBlock</span>
+                            <span class="toggle-desc">Automatically skip sponsored segments in downloaded tracks.</span>
+                        </div>
+                    </label>
+                    <label class="toggle-item">
+                        <input type="checkbox" id="normalizeVolume">
+                        <div class="toggle-info">
+                            <span class="toggle-name">🎚️ Volume Normalization</span>
+                            <span class="toggle-desc">Normalize loudness to EBU R128 (-16 LUFS) so all tracks play at consistent volume. Requires a re-encode — slightly slower.</span>
+                        </div>
+                    </label>
+                    <label class="toggle-item">
+                        <input type="checkbox" id="autoSync">
+                        <div class="toggle-info">
+                            <span class="toggle-name">🔄 Auto-sync on startup</span>
+                            <span class="toggle-desc">Automatically check for and download new Spotify playlist tracks every time the app launches.</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <button type="button" class="btn-primary" style="width: 100%;" onclick="saveSpotifyConfig()">💾 Save Spotify Config</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2 class="card-title">YouTube Music Configuration</h2>
+
+        <div id="ytmConfigStatus"></div>
+
+        <div id="ytmConfigSection">
+            <div class="form-group">
+                <label for="newYtmPlaylistId">YouTube Music Playlists</label>
+                <div class="playlist-input-group">
+                    <input type="text" id="newYtmPlaylistId" placeholder="Playlist ID (e.g. PLxxx from music.youtube.com/playlist?list=PLxxx)" onkeydown="if(event.key==='Enter'){event.preventDefault();addYtmPlaylist();}">
+                    <button type="button" class="btn-secondary" onclick="addYtmPlaylist()">+ Add</button>
+                </div>
+                <div class="playlist-list" id="ytmPlaylistList">
+                    <div style="text-align: center; color: var(--text-secondary); padding: 20px;">No playlists added yet</div>
+                </div>
+                <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+                    💡 Copy the playlist ID from the URL: music.youtube.com/playlist?list=<strong>THIS_PART</strong>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="ytmCookiesBrowser">Browser Authentication <span class="optional-label">(optional — required for private playlists)</span></label>
+                <select id="ytmCookiesBrowser">
+                    <option value="">None — public playlists only</option>
+                    <option value="chrome">Chrome</option>
+                    <option value="firefox">Firefox</option>
+                    <option value="edge">Edge</option>
+                    <option value="brave">Brave</option>
+                    <option value="opera">Opera</option>
+                    <option value="chromium">Chromium</option>
+                </select>
+                <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+                    yt-dlp will read cookies from your selected browser to access private playlists. You must be logged into YouTube Music in that browser.
+                </div>
+            </div>
+
+            <button type="button" class="btn-primary" style="width: 100%;" onclick="saveYtmConfig()">💾 Save YouTube Music Config</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/settings.js"></script>
+}

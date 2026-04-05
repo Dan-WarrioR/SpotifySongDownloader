@@ -1,7 +1,7 @@
 @page
-@model SpotifyDownloader.Pages.Index
+@model SpotifyDownloader.Pages.YtMusicModel
 @{
-    ViewData["Title"] = "Spotify";
+    ViewData["Title"] = "YT Music";
 }
 
 <div class="container">
@@ -11,17 +11,21 @@
         <div class="info-grid">
             <div class="info-box">
                 <div class="info-label">Playlists</div>
-                <div class="info-value" id="infoPlaylistCount">0</div>
-                <div class="info-value text list empty" id="infoPlaylistList" style="margin-top: 8px;"></div>
+                <div class="info-value" id="ytmInfoPlaylistCount">0</div>
+                <div class="info-value text list empty" id="ytmInfoPlaylistList" style="margin-top: 8px;"></div>
             </div>
             <div class="info-box">
                 <div class="info-label">Download Folder</div>
-                <div class="info-value text empty" id="infoDownloadFolder">Not configured</div>
+                <div class="info-value text empty" id="ytmInfoDownloadFolder">Not configured</div>
                 <button class="btn-secondary" onclick="openFolder()" style="margin-top: 8px; font-size: 0.8rem; padding: 4px 10px;">📂 Open</button>
             </div>
             <div class="info-box">
+                <div class="info-label">Auth</div>
+                <div class="info-value text" id="ytmInfoAuth">None (public)</div>
+            </div>
+            <div class="info-box">
                 <div class="info-label">Total Downloaded</div>
-                <div class="info-value" id="infoTotalDownloaded">0</div>
+                <div class="info-value" id="ytmInfoTotalDownloaded">0</div>
             </div>
         </div>
 
@@ -36,41 +40,41 @@
     <div class="card">
         <h2 class="card-title">Download Playlists</h2>
 
-        <div id="statusMessage"></div>
-        <button id="downloadBtn" class="btn-download" disabled><span>⬇️ Start Download</span></button>
+        <div id="ytmStatusMessage"></div>
+        <button id="ytmDownloadBtn" class="btn-download" disabled><span>⬇️ Download All Playlists</span></button>
 
-        <div id="progressSection" class="progress-section">
-            <div class="current-track" id="currentTrack"></div>
-            <div class="progress-text" id="progressText">0%</div>
+        <div id="ytmProgressSection" class="progress-section">
+            <div class="current-track" id="ytmCurrentTrack"></div>
+            <div class="progress-text" id="ytmProgressText">0%</div>
             <div class="progress-bar-container">
-                <div class="progress-bar" id="progressBar"></div>
+                <div class="progress-bar" id="ytmProgressBar"></div>
             </div>
             <div class="stats">
                 <div class="stat">
-                    <div class="stat-value" id="completedCount">0</div>
+                    <div class="stat-value" id="ytmCompletedCount">0</div>
                     <div class="stat-label">Completed</div>
                 </div>
                 <div class="stat">
-                    <div class="stat-value" id="failedCount">0</div>
+                    <div class="stat-value" id="ytmFailedCount">0</div>
                     <div class="stat-label">Failed</div>
                 </div>
                 <div class="stat">
-                    <div class="stat-value" id="totalCount">0</div>
+                    <div class="stat-value" id="ytmTotalCount">0</div>
                     <div class="stat-label">Total</div>
                 </div>
             </div>
-            <button id="cancelBtn" class="btn-danger" onclick="cancelDownload()" style="display: none; margin-top: 12px; width: 100%;">✕ Cancel Download</button>
-            <div id="resultsList" class="results-list"></div>
+            <button id="ytmCancelBtn" class="btn-danger" onclick="cancelYtmDownload()" style="display: none; margin-top: 12px; width: 100%;">✕ Cancel Download</button>
+            <div id="ytmResultsList" class="results-list"></div>
         </div>
 
         <div class="danger-zone">
             <h3>⚠️ Re-download All Tracks</h3>
-            <p>This will clear your download history and re-download all tracks from the playlist. Use this if you have corrupted files or missing album art.</p>
-            <button id="clearHistoryBtn" class="btn-danger">🔄 Clear History & Re-download All</button>
+            <p>Clears the shared download history (affects Spotify and YT Music). Use this to force re-download of all tracks.</p>
+            <button id="ytmClearHistoryBtn" class="btn-danger">🔄 Clear History & Re-download All</button>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <script src="~/js/spotify.js"></script>
+    <script src="~/js/ytmusic.js"></script>
 }
